@@ -6,6 +6,54 @@ var Metrics = function (api) {
     this.api = api
 };
 
+Metrics.prototype.count = function (term, range, seconds, callback) {
+
+    this.api.config(function (config) {
+
+        var esClient = new elasticsearch.Client({
+            host: config['vamp.pulse.elasticsearch.url'],
+            log: 'error'
+        });
+
+        esClient.search({
+            index: config['vamp.gateway-driver.logstash.index'],
+            type: 'haproxy',
+            body: {
+                query: {
+                    filtered: {
+                        query: {
+                            match_all: {}
+                        },
+                        filter: {
+                            bool: {
+                                must: [
+                                    {
+                                        term: term
+                                    },
+                                    {
+                                        range: range
+                                    },
+                                    {
+                                        range: {
+                                            "@timestamp": {
+                                                gt: "now-" + seconds + "s"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                size: 0
+            }
+        }).then(function (response) {
+            callback(response.hits.total);
+        }, function (err) {
+        });
+    });
+};
+
 Metrics.prototype.average = function (term, on, seconds, callback) {
 
     this.api.config(function (config) {
@@ -59,7 +107,8 @@ Metrics.prototype.average = function (term, on, seconds, callback) {
 
             callback(total, rate, average);
 
-        }, function (err) {});
+        }, function (err) {
+        });
     });
 };
 
