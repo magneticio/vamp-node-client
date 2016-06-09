@@ -1,0 +1,25 @@
+{
+  "name": "vamp-node-client",
+  "version": "0.9.0",
+  "description": "Vamp Node.js client",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magneticio/vamp-node-client.git"
+  },
+  "keywords": [
+    "vamp"
+  ],
+  "author": "drago@magnetic.io",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/magneticio/vamp-node-client/issues"
+  },
+  "homepage": "https://github.com/magneticio/vamp-node-client#readme",
+  "dependencies": {
+    "request": "^2.72.0"
+  }
+}
