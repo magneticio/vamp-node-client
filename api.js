@@ -47,8 +47,9 @@ Api.prototype.deployments = function (callback) {
     this.api('deployments?per_page=1000', callback);
 };
 
-Api.prototype.event = function (tags, value) {
-    http.post({url: this.url + 'events', json: {tags: tags, value: value}}, function (e, r, body) {
+Api.prototype.event = function (tags, value, type) {
+    if (!type) type = "event";
+    http.post({url: this.url + 'events', json: {tags: tags, value: value, type: type}}, function (e, r, body) {
     });
 };
 
