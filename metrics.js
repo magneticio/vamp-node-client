@@ -1,115 +1,113 @@
 'use strict';
 
+var _ = require('highland');
 var elasticsearch = require('elasticsearch');
 
 var Metrics = function (api) {
-    this.api = api
+  this.api = api;
 };
 
-Metrics.prototype.count = function (term, range, seconds, callback) {
+Metrics.prototype.count = function (term, range, seconds) {
 
-    this.api.config(function (config) {
+  return this.api.config().flatMap(function (config) {
 
-        var esClient = new elasticsearch.Client({
-            host: config['vamp.pulse.elasticsearch.url'],
-            log: 'error'
-        });
-
-        esClient.search({
-            index: config['vamp.gateway-driver.logstash.index'],
-            type: 'haproxy',
-            body: {
-                query: {
-                    filtered: {
-                        query: {
-                            match_all: {}
-                        },
-                        filter: {
-                            bool: {
-                                must: [
-                                    {
-                                        term: term
-                                    },
-                                    {
-                                        range: range
-                                    },
-                                    {
-                                        range: {
-                                            "@timestamp": {
-                                                gt: "now-" + seconds + "s"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                },
-                size: 0
-            }
-        }).then(function (response) {
-            callback(response.hits.total);
-        }, function (err) {
-        });
+    var esClient = new elasticsearch.Client({
+      host: config['vamp.pulse.elasticsearch.url'],
+      log: 'error'
     });
+
+    return _(esClient.search({
+      index: config['vamp.gateway-driver.logstash.index'],
+      type: 'haproxy',
+      body: {
+        query: {
+          filtered: {
+            query: {
+              match_all: {}
+            },
+            filter: {
+              bool: {
+                must: [
+                  {
+                    term: term
+                  },
+                  {
+                    range: range
+                  },
+                  {
+                    range: {
+                      "@timestamp": {
+                        gt: "now-" + seconds + "s"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        size: 0
+      }
+    })).map(function (response) {
+      return response.hits.total;
+    });
+  });
 };
 
-Metrics.prototype.average = function (term, on, seconds, callback) {
+Metrics.prototype.average = function (term, on, seconds) {
 
-    this.api.config(function (config) {
+  return this.api.config().flatMap(function (config) {
 
-        var esClient = new elasticsearch.Client({
-            host: config['vamp.pulse.elasticsearch.url'],
-            log: 'error'
-        });
-
-        esClient.search({
-            index: config['vamp.gateway-driver.logstash.index'],
-            type: 'haproxy',
-            body: {
-                query: {
-                    filtered: {
-                        query: {
-                            match_all: {}
-                        },
-                        filter: {
-                            bool: {
-                                must: [
-                                    {
-                                        term: term
-                                    },
-                                    {
-                                        range: {
-                                            "@timestamp": {
-                                                gt: "now-" + seconds + "s"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                },
-                aggregations: {
-                    agg: {
-                        avg: {
-                            field: on
-                        }
-                    }
-                },
-                size: 0
-            }
-        }).then(function (response) {
-
-            var total = response.hits.total;
-            var rate = Math.round(total / seconds * 100) / 100;
-            var average = Math.round(response.aggregations.agg.value * 100) / 100;
-
-            callback(total, rate, average);
-
-        }, function (err) {
-        });
+    var esClient = new elasticsearch.Client({
+      host: config['vamp.pulse.elasticsearch.url'],
+      log: 'error'
     });
+
+    return _(esClient.search({
+      index: config['vamp.gateway-driver.logstash.index'],
+      type: 'haproxy',
+      body: {
+        query: {
+          filtered: {
+            query: {
+              match_all: {}
+            },
+            filter: {
+              bool: {
+                must: [
+                  {
+                    term: term
+                  },
+                  {
+                    range: {
+                      "@timestamp": {
+                        gt: "now-" + seconds + "s"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        aggregations: {
+          agg: {
+            avg: {
+              field: on
+            }
+          }
+        },
+        size: 0
+      }
+    })).map(function (response) {
+      var total = response.hits.total;
+      return {
+        total: total,
+        rate: Math.round(total / seconds * 100) / 100,
+        responseTime: Math.round(response.aggregations.agg.value * 100) / 100
+      };
+    });
+  });
 };
 
 module.exports = Metrics;
