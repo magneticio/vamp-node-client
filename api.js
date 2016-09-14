@@ -42,6 +42,17 @@ var Api = function (opts) {
       });
     });
   };
+
+  this.namify = function (artifacts) {
+    var result = [];
+    for (var name in artifacts) {
+      if (!artifacts.hasOwnProperty(name)) continue;
+      var artifact = artifacts[name];
+      artifact['name'] = name;
+      result.push(artifact);
+    }
+    return _(result);
+  };
 };
 
 Api.prototype.info = function () {
