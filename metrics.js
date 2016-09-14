@@ -104,7 +104,7 @@ Metrics.prototype.average = function (term, on, seconds) {
       return {
         total: total,
         rate: Math.round(total / seconds * 100) / 100,
-        responseTime: Math.round(response.aggregations.agg.value * 100) / 100
+        average: Math.round(response.aggregations.agg.value * 100) / 100
       };
     });
   });

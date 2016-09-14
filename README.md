@@ -2,7 +2,9 @@ Vamp Node.js Client
 -------------------
 
 ```javascript
+var _ = require('highland');
 var vamp = require('vamp-node-client');
+
 var api = new vamp.Api({
     host: 'http://localhost:9090', // by default: $VAMP_URL || 'http://127.0.0.1'
     path: '/api/v1'                // by default: '/api/v1'
@@ -13,16 +15,16 @@ var metrics = new vamp.Metrics(api);
 Info
 
 ```javascript
-api.info(function (info) {
-    console.log(info.message);
+api.info().each(function (info) {
+    _.log(info.message);
 });
 ```
 
 Configuration
 
 ```javascript
-api.config(function (config) {
-    console.log(config['vamp.info.message']);
+api.config().each(function (config) {
+    _.log(config['vamp.info.message']);
 });
 ```
 
@@ -35,7 +37,7 @@ api.event(['tag1:a', 'tag2:b'], 'abcd');
 Aggregate
 
 ```javascript
-metrics.average({ ft: 'abc' }, 'Tt', 30, function(total, rate, average) {
-    // ...
+metrics.average({ ft: 'abc' }, 'Tt', 30).each(function(response) {
+    // response.total, response.rate, response.average
 });
 ```
