@@ -17,8 +17,8 @@ Metrics.prototype.count = function (term, range, seconds) {
     });
 
     return _(esClient.search({
-      index: config['vamp.gateway-driver.logstash.index'],
-      type: 'haproxy',
+      index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
+      type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
       body: {
         query: {
           filtered: {
@@ -64,8 +64,8 @@ Metrics.prototype.average = function (term, on, seconds) {
     });
 
     return _(esClient.search({
-      index: config['vamp.gateway-driver.logstash.index'],
-      type: 'haproxy',
+      index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
+      type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
       body: {
         query: {
           filtered: {
