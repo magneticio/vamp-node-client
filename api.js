@@ -8,20 +8,16 @@ var http = request.defaults({
 });
 
 var Api = function (opts) {
-
   opts = opts || {};
+  opts.host = opts.host || process.env.VAMP_URL || 'http://127.0.0.1';
+  opts.path = opts.path || '/api/v1';
 
-  if (!opts.host) {
-    opts.host = (process.env.VAMP_URL || 'http://127.0.0.1');
-  }
+  this.url = opts.host + opts.path;
 
-  if (!opts.path) {
-    opts.path = '/api/v1';
-  }
+  this.get = function (api) {
+    api = api.charAt(0) === '/' ? api : '/' + api;
+    this.log("API GET " + api);
 
-  this.url = opts.host + opts.path + '/';
-
-  this.api = function (api) {
     var self = this;
     var end = false;
     var current = 1;
@@ -43,6 +39,26 @@ var Api = function (opts) {
     });
   };
 
+  this.put = function (api, json) {
+    api = api.charAt(0) === '/' ? api : '/' + api;
+    this.log("API PUT " + api);
+    return _(http({
+      url: this.url + api,
+      method: 'PUT',
+      json: json
+    }).promise());
+  };
+
+  this.delete = function (api, json) {
+    api = api.charAt(0) === '/' ? api : '/' + api;
+    this.log("API DELETE " + api);
+    return _(http({
+      url: this.url + api,
+      method: 'DELETE',
+      json: json || {}
+    }).promise());
+  };
+
   this.namify = function (artifacts) {
     var result = [];
     for (var name in artifacts) {
@@ -53,27 +69,30 @@ var Api = function (opts) {
     }
     return _(result);
   };
+
+  this.log = console.log;
 };
 
 Api.prototype.info = function () {
-  return this.api('info');
+  return this.get('info');
 };
 
 Api.prototype.config = function () {
-  return this.api('config');
+  return this.get('config');
 };
 
 Api.prototype.gateways = function () {
-  return this.api('gateways');
+  return this.get('gateways');
 };
 
 Api.prototype.deployments = function () {
-  return this.api('deployments');
+  return this.get('deployments');
 };
 
 Api.prototype.event = function (tags, value, type) {
   if (!type) type = "event";
-  return _(http.post({url: this.url + 'events', json: {tags: tags, value: value, type: type}}).promise());
+  this.log("API PUT /events " + JSON.stringify({tags: tags, type: type}));
+  return _(http.post({url: this.url + '/events', json: {tags: tags, value: value, type: type}}).promise());
 };
 
 module.exports = Api;

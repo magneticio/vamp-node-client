@@ -8,14 +8,13 @@ var Metrics = function (api) {
 };
 
 Metrics.prototype.count = function (term, range, seconds) {
-
+  var $this = this;
   return this.api.config().flatMap(function (config) {
-
     var esClient = new elasticsearch.Client({
       host: config['vamp.pulse.elasticsearch.url'],
       log: 'error'
     });
-
+    $this.api.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
     return _(esClient.search({
       index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
       type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
@@ -55,14 +54,13 @@ Metrics.prototype.count = function (term, range, seconds) {
 };
 
 Metrics.prototype.average = function (term, on, seconds) {
-
+  var $this = this;
   return this.api.config().flatMap(function (config) {
-
     var esClient = new elasticsearch.Client({
       host: config['vamp.pulse.elasticsearch.url'],
       log: 'error'
     });
-
+    $this.api.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
     return _(esClient.search({
       index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
       type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
