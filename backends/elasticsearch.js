@@ -6,8 +6,10 @@ var elasticsearch = require('elasticsearch');
 module.exports = function($this, term, onrange, seconds) {
     return {
         count: function (config) {
+          var elasticsearchendpoint = process.env.VAMP_METRICS_ENDPOINT || config['vamp.pulse.elasticsearch.url'];
+          // TODO: error when unable to connect with ES
           var esClient = new elasticsearch.Client({
-            host: config['vamp.pulse.elasticsearch.url'],
+            host: elasticsearchendpoint,
             log: 'error'
           });
           $this.api.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: onrange, seconds: seconds}));
@@ -48,8 +50,9 @@ module.exports = function($this, term, onrange, seconds) {
           });
       },
       average: function (config) {
+        var elasticsearchendpoint = process.env.VAMP_METRICS_ENDPOINT || config['vamp.pulse.elasticsearch.url'];
         var esClient = new elasticsearch.Client({
-          host: config['vamp.pulse.elasticsearch.url'],
+          host: elasticsearchendpoint,
           log: 'error'
         });
         $this.api.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: onrange, seconds: seconds}));
