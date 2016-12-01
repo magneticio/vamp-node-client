@@ -5,6 +5,8 @@ var metrics_backend_name = process.env.VAMP_METRICS_BACKEND || 'elasticsearch'
 var _ = require('highland');
 var metrics_backend = require('./backends/' + metrics_backend_name);
 
+_.log('Using metrics implementation ' + metrics_backend_name)
+
 var Metrics = function (api) {
   this.api = api;
 };
