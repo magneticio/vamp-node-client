@@ -3,7 +3,14 @@
 var _ = require('highland');
 var elasticsearch = require('elasticsearch');
 
-module.exports = function($this, term, onrange, seconds) {
+module.exports = function($this, query_options) {
+    // Help:
+    // var query_options = {term: {ft:gateway.lookup_name}, on: 'Tt', seconds: 300};
+    var term = query_options.term;
+    var seconds = query_options.seconds;
+    var on = query_options.on || '';
+    var range = query_options.range || '';
+
     return {
         count: function (config) {
           var elasticsearchendpoint = process.env.VAMP_METRICS_ENDPOINT || config['vamp.pulse.elasticsearch.url'];
@@ -12,7 +19,7 @@ module.exports = function($this, term, onrange, seconds) {
             host: elasticsearchendpoint,
             log: 'error'
           });
-          $this.api.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: onrange, seconds: seconds}));
+          $this.api.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
           return _(esClient.search({
             index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
             type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
@@ -55,7 +62,7 @@ module.exports = function($this, term, onrange, seconds) {
           host: elasticsearchendpoint,
           log: 'error'
         });
-        $this.api.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: onrange, seconds: seconds}));
+        $this.api.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
         return _(esClient.search({
           index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
           type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
@@ -86,7 +93,7 @@ module.exports = function($this, term, onrange, seconds) {
             aggregations: {
               agg: {
                 avg: {
-                  field: onrange
+                  field: on
                 }
               }
             },

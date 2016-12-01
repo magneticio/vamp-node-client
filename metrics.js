@@ -11,14 +11,14 @@ var Metrics = function (api) {
   this.api = api;
 };
 
-Metrics.prototype.count = function (term, onrange, seconds) {
+Metrics.prototype.count = function (query_options) {
   var $this = this;
-  return this.api.config().flatMap(metrics_backend($this, term, onrange, seconds).count);
+  return this.api.config().flatMap(metrics_backend($this, query_options).count);
 };
 
-Metrics.prototype.average = function (term, onrange, seconds) {
+Metrics.prototype.average = function (query_options) {
   var $this = this;
-  return this.api.config().flatMap(metrics_backend($this, term, onrange, seconds).average);
+  return this.api.config().flatMap(metrics_backend($this, query_options).average);
 };
 
 module.exports = Metrics;
