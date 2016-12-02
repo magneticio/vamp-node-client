@@ -30,7 +30,7 @@ module.exports = function($this, query_options) {
             return _(rp(options)
                 .then(function(v) {
                     var total = Math.round(v.data.result[0].value[1]);
-                    var healthy = total? 0 : 1;
+                    var healthy = total > 0 ? 0 : 1;
                     return {
                         total: total,
                         healthy: healthy
