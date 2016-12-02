@@ -11,9 +11,10 @@ module.exports = function($this, query_options) {
     var on = query_options.on || '';
     var range = query_options.range || '';
 
+    var elasticsearchendpoint = process.env.VAMP_METRICS_ENDPOINT || config['vamp.pulse.elasticsearch.url'];
+
     return {
         count: function (config) {
-          var elasticsearchendpoint = process.env.VAMP_METRICS_ENDPOINT || config['vamp.pulse.elasticsearch.url'];
           // TODO: error when unable to connect with ES
           var esClient = new elasticsearch.Client({
             host: elasticsearchendpoint,
@@ -57,7 +58,6 @@ module.exports = function($this, query_options) {
           });
       },
       average: function (config) {
-        var elasticsearchendpoint = process.env.VAMP_METRICS_ENDPOINT || config['vamp.pulse.elasticsearch.url'];
         var esClient = new elasticsearch.Client({
           host: elasticsearchendpoint,
           log: 'error'
