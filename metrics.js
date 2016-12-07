@@ -1,111 +1,24 @@
 'use strict';
 
+var metrics_backend_name = process.env.VAMP_METRICS_BACKEND || 'elasticsearch'
+
 var _ = require('highland');
-var elasticsearch = require('elasticsearch');
+var metrics_backend = require('./backends/' + metrics_backend_name);
+
+_.log('Using metrics implementation ' + metrics_backend_name)
 
 var Metrics = function (api) {
   this.api = api;
 };
 
-Metrics.prototype.count = function (term, range, seconds) {
+Metrics.prototype.count = function (query_options) {
   var $this = this;
-  return this.api.config().flatMap(function (config) {
-    var esClient = new elasticsearch.Client({
-      host: config['vamp.pulse.elasticsearch.url'],
-      log: 'error'
-    });
-    $this.api.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
-    return _(esClient.search({
-      index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
-      type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
-      body: {
-        query: {
-          filtered: {
-            query: {
-              match_all: {}
-            },
-            filter: {
-              bool: {
-                must: [
-                  {
-                    term: term
-                  },
-                  {
-                    range: range
-                  },
-                  {
-                    range: {
-                      "@timestamp": {
-                        gt: "now-" + seconds + "s"
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        },
-        size: 0
-      }
-    })).map(function (response) {
-      return response.hits.total;
-    });
-  });
+  return this.api.config().flatMap(metrics_backend($this, query_options).count);
 };
 
-Metrics.prototype.average = function (term, on, seconds) {
+Metrics.prototype.average = function (query_options) {
   var $this = this;
-  return this.api.config().flatMap(function (config) {
-    var esClient = new elasticsearch.Client({
-      host: config['vamp.pulse.elasticsearch.url'],
-      log: 'error'
-    });
-    $this.api.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
-    return _(esClient.search({
-      index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
-      type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
-      body: {
-        query: {
-          filtered: {
-            query: {
-              match_all: {}
-            },
-            filter: {
-              bool: {
-                must: [
-                  {
-                    term: term
-                  },
-                  {
-                    range: {
-                      "@timestamp": {
-                        gt: "now-" + seconds + "s"
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        },
-        aggregations: {
-          agg: {
-            avg: {
-              field: on
-            }
-          }
-        },
-        size: 0
-      }
-    })).map(function (response) {
-      var total = response.hits.total;
-      return {
-        total: total,
-        rate: Math.round(total / seconds * 100) / 100,
-        average: Math.round(response.aggregations.agg.value * 100) / 100
-      };
-    });
-  });
+  return this.api.config().flatMap(metrics_backend($this, query_options).average);
 };
 
 module.exports = Metrics;
