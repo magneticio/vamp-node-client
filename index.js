@@ -1,7 +1,7 @@
 'use strict';
 
-var Api = require('./api');
-var Metrics = require('./metrics');
+let Api = require('./api');
+let ElasticsearchMetrics = require('./elasticsearch_metrics');
 
 exports.Api = Api;
-exports.Metrics = Metrics;
+exports.ElasticsearchMetrics = ElasticsearchMetrics;

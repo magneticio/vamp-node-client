@@ -1,13 +1,13 @@
 'use strict';
 
-var _ = require('highland');
-var request = require('request-promise');
+let _ = require('highland');
+let request = require('request-promise');
 
-var http = request.defaults({
+let http = request.defaults({
   headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}
 });
 
-var Api = function (opts) {
+let Api = function (opts) {
   opts = opts || {};
   opts.host = opts.host || process.env.VAMP_URL || 'http://127.0.0.1';
   opts.path = opts.path || '/api/v1';
@@ -18,9 +18,9 @@ var Api = function (opts) {
     api = api.charAt(0) === '/' ? api : '/' + api;
     this.log("API GET " + api);
 
-    var self = this;
-    var end = false;
-    var current = 1;
+    let self = this;
+    let end = false;
+    let current = 1;
     return _(function (push, next) {
       if (!end) {
         push(null, current++);
@@ -60,10 +60,10 @@ var Api = function (opts) {
   };
 
   this.namify = function (artifacts) {
-    var result = [];
-    for (var name in artifacts) {
+    let result = [];
+    for (let name in artifacts) {
       if (!artifacts.hasOwnProperty(name)) continue;
-      var artifact = artifacts[name];
+      let artifact = artifacts[name];
       artifact['name'] = name;
       result.push(artifact);
     }
