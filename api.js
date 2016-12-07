@@ -8,25 +8,32 @@ let http = request.defaults({
 });
 
 module.exports = function (opts) {
+  let $this = this;
   opts = opts || {};
   opts.host = opts.host || process.env.VAMP_URL || 'http://127.0.0.1';
   opts.path = opts.path || '/api/v1';
 
-  let cache = {};
+  let cachedValues = {};
+  let cachedStreams = {};
 
   return {
     log: console.log,
     url: opts.host + opts.path,
     get: function (api, force) {
       api = api.charAt(0) === '/' ? api : '/' + api;
-      if (!cache[api] || force) {
+
+      if (cachedValues[api] && !force) {
+        return _([cachedValues[api]]);
+      }
+
+      if (!cachedStreams[api] || force) {
         this.log('API GET ' + api);
 
         let self = this;
         let end = false;
         let current = 1;
 
-        cache[api] = _(function (push, next) {
+        cachedStreams[api] = _(function (push, next) {
           if (!end) {
             push(null, current++);
             next();
@@ -45,11 +52,14 @@ module.exports = function (opts) {
       } else {
         this.log('API GET ' + api + ' [CACHED]');
       }
-      return cache[api].fork();
+      return cachedStreams[api].fork().tap(function (value) {
+        cachedValues[api] = value;
+      });
     },
     put: function (api, json) {
       api = api.charAt(0) === '/' ? api : '/' + api;
-      delete cache[api];
+      delete cachedValues[api];
+      delete cachedStreams[api];
       this.log('API PUT ' + api);
       return _(http({
         url: this.url + api,
@@ -59,7 +69,8 @@ module.exports = function (opts) {
     },
     delete: function (api, json) {
       api = api.charAt(0) === '/' ? api : '/' + api;
-      delete cache[api];
+      delete cachedValues[api];
+      delete cachedStreams[api];
       this.log('API DELETE ' + api);
       return _(http({
         url: this.url + api,
