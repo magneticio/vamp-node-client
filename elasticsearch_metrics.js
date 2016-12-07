@@ -4,7 +4,6 @@ let _ = require('highland');
 let elasticsearch = require('elasticsearch');
 
 module.exports = function (api) {
-  this.api = api;
   let $this = this;
 
   this.query = function (config, term, seconds) {
@@ -42,14 +41,14 @@ module.exports = function (api) {
 
   return {
     count: function (term, range, seconds) {
-      return $this.api.config().flatMap(function (config) {
+      return api.config().flatMap(function (config) {
 
         let esClient = new elasticsearch.Client({
           host: config['vamp.pulse.elasticsearch.url'],
           log: 'error'
         });
 
-        $this.api.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
+        api.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
 
         let query = $this.query(config, term, seconds);
         query.body.query.filtered.filter.bool.must.push({range: range});
@@ -60,14 +59,14 @@ module.exports = function (api) {
       })
     },
     average: function (term, on, seconds) {
-      return $this.api.config().flatMap(function (config) {
+      return api.config().flatMap(function (config) {
 
         let esClient = new elasticsearch.Client({
           host: config['vamp.pulse.elasticsearch.url'],
           log: 'error'
         });
 
-        $this.api.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
+        api.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
 
         let query = $this.query(config, term, seconds);
         query.body.aggregations = {
