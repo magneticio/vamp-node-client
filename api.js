@@ -1,40 +1,22 @@
 'use strict';
 
 let _ = require('highland');
-let request = require('request-promise');
-
-let http = request.defaults({
-  headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}
-});
+let util = require('./util')();
 
 module.exports = function (opts) {
   opts = opts || {};
   opts.host = opts.host || process.env.VAMP_URL || 'http://127.0.0.1';
   opts.path = opts.path || '/api/v1';
-  opts.cache = toBoolean(opts.cache || process.env.VAMP_API_CACHE || true);
+  opts.headers = opts.headers || {'Accept': 'application/json', 'Content-Type': 'application/json'};
+  opts.cache = util.boolean(opts.cache || process.env.VAMP_API_CACHE || true);
 
-  console.log('API options: ' + JSON.stringify(opts));
+  util.log('API options: ' + JSON.stringify(opts));
 
   let cachedValues = {};
   let cachedStreams = {};
 
-  function toBoolean(string) {
-    if (string == null) {
-      return false;
-    }
-    string += '';
-    switch (string.toLowerCase().trim()) {
-      case "true":
-      case "yes":
-      case "1":
-        return true;
-      default:
-        return false;
-    }
-  }
-
   return {
-    log: console.log,
+    log: util.log,
     url: opts.host + opts.path,
     get: function (api, force) {
       api = api.charAt(0) === '/' ? api : '/' + api;
@@ -59,7 +41,7 @@ module.exports = function (opts) {
             next();
           } else push(null, _.nil);
         }).flatMap(function (page) {
-          return _(http(self.url + api + '?page=' + (page++)).promise().then(JSON.parse)).flatMap(function (response) {
+          return _(util.request(self.url + api + '?page=' + (page++), {headers: opts.headers}).then(JSON.parse)).flatMap(function (response) {
             if (response.constructor === Array) {
               if (response.length == 0) end = true;
               return _(response);
@@ -81,22 +63,30 @@ module.exports = function (opts) {
       delete cachedValues[api];
       delete cachedStreams[api];
       this.log('API PUT ' + api);
-      return _(http({
-        url: this.url + api,
+      return _(util.request(this.url + api, {
         method: 'PUT',
-        json: json
-      }).promise());
+        headers: opts.headers
+      }, JSON.stringify(json)));
+    },
+    post: function (api, json) {
+      api = api.charAt(0) === '/' ? api : '/' + api;
+      delete cachedValues[api];
+      delete cachedStreams[api];
+      this.log('API POST ' + api);
+      return _(util.request(this.url + api, {
+        method: 'POST',
+        headers: opts.headers
+      }, JSON.stringify(json)));
     },
     delete: function (api, json) {
       api = api.charAt(0) === '/' ? api : '/' + api;
       delete cachedValues[api];
       delete cachedStreams[api];
       this.log('API DELETE ' + api);
-      return _(http({
-        url: this.url + api,
+      return _(util.request(this.url + api, {
         method: 'DELETE',
-        json: json || {}
-      }).promise());
+        headers: opts.headers
+      }, json ? JSON.stringify(json) : ''));
     },
     namify: function (artifacts) {
       let result = [];
@@ -124,7 +114,7 @@ module.exports = function (opts) {
       let $this = this;
       if (!type) type = 'event';
       this.log('API PUT /events ' + JSON.stringify({tags: tags, type: type}));
-      return _(http.post({url: $this.url + '/events', json: {tags: tags, value: value, type: type}}).promise());
+      return _(this.post('/events', {tags: tags, value: value, type: type}));
     }
   };
 };

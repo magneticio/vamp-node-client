@@ -21,8 +21,6 @@
   "homepage": "https://github.com/magneticio/vamp-node-client#readme",
   "dependencies": {
     "elasticsearch": "^11.0.1",
-    "highland": "^3.0.0-beta.3",
-    "request": "^2.74.0",
-    "request-promise": "^4.1.1"
+    "highland": "^3.0.0-beta.3"
   }
 }
