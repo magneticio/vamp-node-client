@@ -1,7 +1,9 @@
 'use strict';
 
 let _ = require('highland');
+let logger = require('./log')();
 let util = require('./util')();
+let http = require('./http')();
 
 module.exports = function (opts) {
   opts = opts || {};
@@ -10,13 +12,12 @@ module.exports = function (opts) {
   opts.headers = opts.headers || {'Accept': 'application/json', 'Content-Type': 'application/json'};
   opts.cache = util.boolean(opts.cache || process.env.VAMP_API_CACHE || true);
 
-  util.log('API options: ' + JSON.stringify(opts));
+  logger.log('API options: ' + JSON.stringify(opts));
 
   let cachedValues = {};
   let cachedStreams = {};
 
   return {
-    log: util.log,
     url: opts.host + opts.path,
     get: function (api, force) {
       api = api.charAt(0) === '/' ? api : '/' + api;
@@ -24,12 +25,12 @@ module.exports = function (opts) {
       let allowCache = opts.cache && !force;
 
       if (cachedValues[api] && allowCache) {
-        this.log('API GET ' + api + ' [CACHED]');
+        logger.log('API GET ' + api + ' [CACHED]');
         return _([cachedValues[api]]);
       }
 
       if (!cachedStreams[api] || !allowCache) {
-        this.log('API GET ' + api);
+        logger.log('API GET ' + api);
 
         let self = this;
         let end = false;
@@ -41,7 +42,7 @@ module.exports = function (opts) {
             next();
           } else push(null, _.nil);
         }).flatMap(function (page) {
-          return _(util.request(self.url + api + '?page=' + (page++), {headers: opts.headers}).then(JSON.parse)).flatMap(function (response) {
+          return _(http.get(self.url + api + '?page=' + (page++), {headers: opts.headers}).then(JSON.parse)).flatMap(function (response) {
             if (response.constructor === Array) {
               if (response.length == 0) end = true;
               return _(response);
@@ -52,7 +53,7 @@ module.exports = function (opts) {
           });
         });
       } else {
-        this.log('API GET ' + api + ' [CACHED]');
+        logger.log('API GET ' + api + ' [CACHED]');
       }
       return cachedStreams[api].fork().tap(function (value) {
         cachedValues[api] = value;
@@ -62,8 +63,8 @@ module.exports = function (opts) {
       api = api.charAt(0) === '/' ? api : '/' + api;
       delete cachedValues[api];
       delete cachedStreams[api];
-      this.log('API PUT ' + api);
-      return _(util.request(this.url + api, {
+      logger.log('API PUT ' + api);
+      return _(http.request(this.url + api, {
         method: 'PUT',
         headers: opts.headers
       }, JSON.stringify(json)));
@@ -72,8 +73,8 @@ module.exports = function (opts) {
       api = api.charAt(0) === '/' ? api : '/' + api;
       delete cachedValues[api];
       delete cachedStreams[api];
-      this.log('API POST ' + api);
-      return _(util.request(this.url + api, {
+      logger.log('API POST ' + api);
+      return _(http.request(this.url + api, {
         method: 'POST',
         headers: opts.headers
       }, JSON.stringify(json)));
@@ -82,8 +83,8 @@ module.exports = function (opts) {
       api = api.charAt(0) === '/' ? api : '/' + api;
       delete cachedValues[api];
       delete cachedStreams[api];
-      this.log('API DELETE ' + api);
-      return _(util.request(this.url + api, {
+      logger.log('API DELETE ' + api);
+      return _(http.request(this.url + api, {
         method: 'DELETE',
         headers: opts.headers
       }, json ? JSON.stringify(json) : ''));
@@ -111,9 +112,8 @@ module.exports = function (opts) {
       return this.get('deployments', force);
     },
     event: function (tags, value, type) {
-      let $this = this;
       if (!type) type = 'event';
-      this.log('API PUT /events ' + JSON.stringify({tags: tags, type: type}));
+      logger.log('API PUT /events ' + JSON.stringify({tags: tags, type: type}));
       return _(this.post('/events', {tags: tags, value: value, type: type}));
     }
   };
