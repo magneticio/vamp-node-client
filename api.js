@@ -8,13 +8,30 @@ let http = request.defaults({
 });
 
 module.exports = function (opts) {
-  let $this = this;
   opts = opts || {};
   opts.host = opts.host || process.env.VAMP_URL || 'http://127.0.0.1';
   opts.path = opts.path || '/api/v1';
+  opts.cache = toBoolean(opts.cache || process.env.VAMP_API_CACHE || true);
+
+  console.log('API options: ' + JSON.stringify(opts));
 
   let cachedValues = {};
   let cachedStreams = {};
+
+  function toBoolean(string) {
+    if (string == null) {
+      return false;
+    }
+    string += '';
+    switch (string.toLowerCase().trim()) {
+      case "true":
+      case "yes":
+      case "1":
+        return true;
+      default:
+        return false;
+    }
+  }
 
   return {
     log: console.log,
@@ -22,11 +39,14 @@ module.exports = function (opts) {
     get: function (api, force) {
       api = api.charAt(0) === '/' ? api : '/' + api;
 
-      if (cachedValues[api] && !force) {
+      let allowCache = opts.cache && !force;
+
+      if (cachedValues[api] && allowCache) {
+        this.log('API GET ' + api + ' [CACHED]');
         return _([cachedValues[api]]);
       }
 
-      if (!cachedStreams[api] || force) {
+      if (!cachedStreams[api] || !allowCache) {
         this.log('API GET ' + api);
 
         let self = this;
