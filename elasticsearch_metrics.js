@@ -1,7 +1,8 @@
 'use strict';
 
 let _ = require('highland');
-let elasticsearch = require('elasticsearch');
+let logger = require('./log')();
+let http = require('./http')();
 
 module.exports = function (api) {
   let $this = this;
@@ -42,32 +43,24 @@ module.exports = function (api) {
   return {
     count: function (term, range, seconds) {
       return api.config().flatMap(function (config) {
+        logger.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
 
-        let esClient = new elasticsearch.Client({
-          host: config['vamp.pulse.elasticsearch.url'],
-          log: 'error'
-        });
-
-        api.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
-
+        let url = config['vamp.pulse.elasticsearch.url'];
         let query = $this.query(config, term, seconds);
         query.body.query.filtered.filter.bool.must.push({range: range});
+        url += '/' + query.index + '/' + query.type + '/_search';
 
-        return _(esClient.search(query)).map(function (response) {
+        return _(http.request(url, {method: 'POST'}, JSON.stringify(query.body))).map(function (response) {
+          response = JSON.parse(response);
           return response.hits.total;
         });
       })
     },
     average: function (term, on, seconds) {
       return api.config().flatMap(function (config) {
+        logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
 
-        let esClient = new elasticsearch.Client({
-          host: config['vamp.pulse.elasticsearch.url'],
-          log: 'error'
-        });
-
-        api.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
-
+        let url = config['vamp.pulse.elasticsearch.url'];
         let query = $this.query(config, term, seconds);
         query.body.aggregations = {
           agg: {
@@ -76,8 +69,10 @@ module.exports = function (api) {
             }
           }
         };
+        url += '/' + query.index + '/' + query.type + '/_search';
 
-        return _(esClient.search(query)).map(function (response) {
+        return _(http.request(url, {method: 'POST'}, JSON.stringify(query.body))).map(function (response) {
+          response = JSON.parse(response);
           let total = response.hits.total;
           return {
             total: total,

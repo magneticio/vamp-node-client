@@ -11,7 +11,7 @@ module.exports = function () {
     },
     request: function (url, options, data) {
       let localIndex = index++;
-
+      options = options || {};
       url = require('url').parse(url);
 
       let request = {
