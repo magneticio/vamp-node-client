@@ -6,6 +6,7 @@ module.exports = function () {
   let index = 0;
   return {
     get: function (url, options) {
+      options = options || {};
       options.method = 'GET';
       return this.request(url, options);
     },
