@@ -19,8 +19,9 @@ module.exports = function (opts) {
 
   return {
     url: opts.host + opts.path,
-    get: function (api, force) {
+    get: function (api, force, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
+      qs = qs ? '&' + qs : '';
 
       let allowCache = opts.cache && !force;
 
@@ -42,7 +43,7 @@ module.exports = function (opts) {
             next();
           } else push(null, _.nil);
         }).flatMap(function (page) {
-          return _(http.get(self.url + api + '?page=' + (page++), {headers: opts.headers}).then(JSON.parse)).flatMap(function (response) {
+          return _(http.get(self.url + api + '?page=' + (page++) + qs, {headers: opts.headers}).then(JSON.parse)).flatMap(function (response) {
             if (response.constructor === Array) {
               if (response.length == 0) end = true;
               return _(response);
@@ -103,7 +104,7 @@ module.exports = function (opts) {
       return this.get('info', force);
     },
     config: function (force) {
-      return this.get('config', force);
+      return this.get('config', force, 'flatten=true');
     },
     gateways: function (force) {
       return this.get('gateways', force);
