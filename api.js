@@ -11,6 +11,7 @@ module.exports = function (opts) {
   opts.path = opts.path || '/api/v1';
   opts.headers = opts.headers || {'Accept': 'application/json', 'Content-Type': 'application/json'};
   opts.cache = util.boolean(opts.cache || process.env.VAMP_API_CACHE || true);
+  opts.namespace = opts.namespace || process.env.VAMP_NAMESPACE || 'default';
 
   logger.log('API options: ' + JSON.stringify(opts));
 
@@ -21,7 +22,7 @@ module.exports = function (opts) {
     url: opts.host + opts.path,
     get: function (api, force, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
-      qs = qs ? '&' + qs : '';
+      qs = '&namespace=' + encodeURIComponent(opts.namespace) + (qs ? '&' + qs : '');
 
       let allowCache = opts.cache && !force;
 
@@ -60,32 +61,35 @@ module.exports = function (opts) {
         cachedValues[api] = value;
       });
     },
-    put: function (api, json) {
+    put: function (api, json, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
+      qs = '?namespace=' + encodeURIComponent(opts.namespace) + (qs ? '&' + qs : '');
       delete cachedValues[api];
       delete cachedStreams[api];
       logger.log('API PUT ' + api);
-      return _(http.request(this.url + api, {
+      return _(http.request(this.url + api + qs, {
         method: 'PUT',
         headers: opts.headers
       }, JSON.stringify(json)));
     },
-    post: function (api, json) {
+    post: function (api, json, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
+      qs = '?namespace=' + encodeURIComponent(opts.namespace) + (qs ? '&' + qs : '');
       delete cachedValues[api];
       delete cachedStreams[api];
       logger.log('API POST ' + api);
-      return _(http.request(this.url + api, {
+      return _(http.request(this.url + api + qs, {
         method: 'POST',
         headers: opts.headers
       }, JSON.stringify(json)));
     },
-    delete: function (api, json) {
+    delete: function (api, json, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
+      qs = '?namespace=' + encodeURIComponent(opts.namespace) + (qs ? '&' + qs : '');
       delete cachedValues[api];
       delete cachedStreams[api];
       logger.log('API DELETE ' + api);
-      return _(http.request(this.url + api, {
+      return _(http.request(this.url + api + qs, {
         method: 'DELETE',
         headers: opts.headers
       }, json ? JSON.stringify(json) : ''));
