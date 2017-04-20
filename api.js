@@ -19,7 +19,7 @@ module.exports = function (opts) {
   let cachedStreams = {};
 
   return {
-    url: opts.host + opts.path + (opts.namespace ? '/' + encodeURIComponent(opts.namespace) : ''),
+    url: opts.host + (opts.namespace ? '/' + encodeURIComponent(opts.namespace) : '') + opts.path,
     get: function (api, force, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
       qs = qs ? '&' + qs : '';
