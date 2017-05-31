@@ -9,9 +9,10 @@ module.exports = function (opts) {
   opts = opts || {};
   opts.host = opts.host || process.env.VAMP_URL || 'http://127.0.0.1';
   opts.path = opts.path || '/api/v1';
-  opts.headers = opts.headers || {'Accept': 'application/json', 'Content-Type': 'application/json'};
   opts.cache = util.boolean(opts.cache || process.env.VAMP_API_CACHE || true);
+  opts.token = opts.token || process.env.VAMP_API_TOKEN || '';
   opts.namespace = opts.namespace || process.env.VAMP_NAMESPACE || '';
+  opts.headers = opts.headers || {'Authorization': opts.token ? 'token ' + opts.token : 'token', 'Accept': 'application/json', 'Content-Type': 'application/json'};
 
   logger.log('API options: ' + JSON.stringify(opts));
 
