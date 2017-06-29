@@ -60,7 +60,7 @@ module.exports = function (api) {
       return api.config().flatMap(function (config) {
         logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
 
-        let url = config['vamp.pulse.elasticsearch.url'];
+        let url = process.env.ELASTICSEARCH_URL || config['vamp.pulse.elasticsearch.url'];
         let query = $this.query(config, term, seconds);
         query.body.aggregations = {
           agg: {
