@@ -47,7 +47,7 @@ module.exports = function (opts) {
         }).flatMap(function (page) {
           return _(http.get(self.url + api + '?page=' + (page++) + qs, {headers: opts.headers}).then(JSON.parse)).flatMap(function (response) {
             if (response.constructor === Array) {
-              if (response.length == 0) end = true;
+              if (response.length === 0) end = true;
               return _(response);
             } else {
               end = true;

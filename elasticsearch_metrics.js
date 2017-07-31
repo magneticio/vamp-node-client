@@ -13,7 +13,7 @@ module.exports = function (api) {
       config['vamp.pulse.elasticsearch.url'] = process.env.VAMP_PULSE_ELASTICSEARCH_URL;
       config['vamp.gateway-driver.elasticsearch.metrics.type'] = process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_TYPE;
       config['vamp.gateway-driver.elasticsearch.metrics.index'] = process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_INDEX;
-      return _(config);
+      return _([config]);
     }
     return api.config();
   };
