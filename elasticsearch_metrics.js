@@ -24,26 +24,19 @@ module.exports = function (api) {
       type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
       body: {
         query: {
-          filtered: {
-            query: {
-              match_all: {}
-            },
-            filter: {
-              bool: {
-                must: [
-                  {
-                    term: term
-                  },
-                  {
-                    range: {
-                      "@timestamp": {
-                        gt: "now-" + seconds + "s"
-                      }
-                    }
+          bool: {
+            filter: [
+              {
+                term: term
+              },
+              {
+                range: {
+                  "@timestamp": {
+                    gt: "now-" + seconds + "s"
                   }
-                ]
+                }
               }
-            }
+            ]
           }
         },
         size: 0
@@ -58,7 +51,7 @@ module.exports = function (api) {
 
         let url = config['vamp.pulse.elasticsearch.url'];
         let query = $this.query(config, term, seconds);
-        query.body.query.filtered.filter.bool.must.push({range: range});
+        query.body.query.bool.filter.push({range: range});
         url += '/' + query.index + '/' + query.type + '/_search';
 
         return _(http.request(url, {method: 'POST'}, JSON.stringify(query.body))).map(function (response) {
