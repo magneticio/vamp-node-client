@@ -54,7 +54,7 @@ module.exports = function (api) {
         query.body.query.bool.filter.push({range: range});
         url += '/' + query.index + '/' + query.type + '/_search';
 
-        return _(http.request(url, {method: 'POST'}, JSON.stringify(query.body))).map(function (response) {
+        return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, JSON.stringify(query.body))).map(function (response) {
           response = JSON.parse(response);
           return response.hits.total;
         });
@@ -75,7 +75,7 @@ module.exports = function (api) {
         };
         url += '/' + query.index + '/' + query.type + '/_search';
 
-        return _(http.request(url, {method: 'POST'}, JSON.stringify(query.body))).map(function (response) {
+        return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, JSON.stringify(query.body))).map(function (response) {
           response = JSON.parse(response);
           let total = response.hits.total;
           return {
