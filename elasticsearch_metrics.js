@@ -7,48 +7,70 @@ let http = require('./http')();
 module.exports = function (api) {
   let $this = this;
 
+  let elasticsearchVersion = '';
+
+  let queryParam1 = 'bool';
+  let queryParam2 = 'must';
+
   this.config = function () {
+    let configuration;
     if (process.env.VAMP_PULSE_ELASTICSEARCH_URL) {
       let config = {};
       config['vamp.pulse.elasticsearch.url'] = process.env.VAMP_PULSE_ELASTICSEARCH_URL;
       config['vamp.gateway-driver.elasticsearch.metrics.type'] = process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_TYPE;
       config['vamp.gateway-driver.elasticsearch.metrics.index'] = process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_INDEX;
-      return _([config]);
+      configuration = _([config]);
+    } else {
+      configuration = api.config();
     }
-    return api.config();
+
+    if (!elasticsearchVersion) {
+      let cfg;
+      return configuration.flatMap((data) => {
+        cfg = data;
+        return _(http.get(data['vamp.pulse.elasticsearch.url']).then(JSON.parse)).map((es) => {
+          elasticsearchVersion = Number(es.version.number.substr(0, es.version.number.indexOf('.')));
+          if (elasticsearchVersion < 5) {
+            queryParam1 = 'filtered';
+            queryParam2 = 'query';
+          }
+          return cfg;
+        });
+      });
+    }
+
+    return configuration;
   };
 
   this.query = function (config, term, seconds) {
-    return {
+    const query = {
       index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
       type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
       body: {
-        query: {
-          filtered: {
-            query: {
-              match_all: {}
+        size: 0,
+        query: {}
+      }
+    };
+    query.body.query[queryParam1] = {
+      filter: {
+        bool: {
+          must: [
+            {
+              term: term
             },
-            filter: {
-              bool: {
-                must: [
-                  {
-                    term: term
-                  },
-                  {
-                    range: {
-                      "@timestamp": {
-                        gt: "now-" + seconds + "s"
-                      }
-                    }
-                  }
-                ]
+            {
+              range: {
+                "@timestamp": {
+                  gt: "now-" + seconds + "s"
+                }
               }
             }
-          }
-        },
-        size: 0
+          ]
+        }
       }
-    }
+    };
+    query.body.query[queryParam1][queryParam2] = { match_all: {} };
+    return query;
   };
 
   return {
@@ -58,7 +80,7 @@ module.exports = function (api) {
 
         let url = config['vamp.pulse.elasticsearch.url'];
         let query = $this.query(config, term, seconds);
-        query.body.query.filtered.filter.bool.must.push({range: range});
+        query.body.query[queryParam1].filter.bool.must.push({range: range});
         url += '/' + query.index + '/' + query.type + '/_search';
 
         return _(http.request(url, {method: 'POST'}, JSON.stringify(query.body))).map(function (response) {
