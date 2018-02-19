@@ -27,7 +27,14 @@ module.exports = function () {
       logger.log('HTTP REQUEST [' + localIndex + '] ' + JSON.stringify(request));
 
       return new Promise((resolve, reject) => {
-        const lib = request.protocol === 'https' ? require('https') : require('http');
+        const tls = request.protocol.startsWith('https');
+        const lib = tls ? require('https') : require('http');
+        if (tls) {
+          request.rejectUnauthorized = require('./util')().boolean(process.env.VAMP_TLS_CHECK || true);
+          if (request.rejectUnauthorized && process.env.VAMP_CA) {
+            request.ca = require('fs').readFileSync(process.env.VAMP_CA);
+          }
+        }
         const req = lib.request(request, (response) => {
           const body = [];
           response.on('data', (chunk) => body.push(chunk));
