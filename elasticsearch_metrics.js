@@ -74,6 +74,26 @@ module.exports = function (api) {
     return query;
   };
 
+  this.normalizeEvent = function (tags, value, type) {
+    tags = tags || [];
+    const expandedTags = new Set();
+    tags.forEach(function (tag) {
+      expandedTags.add(tag);
+      let index = tag.indexOf(':');
+      if (index > -1) {
+        expandedTags.add(tag.substr(0, index));
+      }
+    });
+    let body = {
+      tags: Array.from(expandedTags),
+      value: '' + value,
+      type: type,
+      timestamp: new Date().toISOString()
+    };
+    body[type] = value;
+    return body;
+  };
+
   return {
     event: function (tags, value, type) {
       return $this.config().flatMap(function (config) {
@@ -93,13 +113,8 @@ module.exports = function (api) {
           path = part1 + dateFormat(new Date(), part2) + part3;
         }
         url += url.endsWith('/') ? path : '/' + path;
-        let body = {
-          tags: tags,
-          value: value,
-          type: type
-        };
-
-        return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, JSON.stringify(body)));
+        const body = JSON.stringify($this.normalizeEvent(tags, value, type));
+        return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, body));
       });
     },
     count: function (term, range, seconds) {
