@@ -1,6 +1,7 @@
 'use strict';
 
 let _ = require('highland');
+let dateFormat = require('date-fns/format');
 let logger = require('./log')();
 let http = require('./http')();
 
@@ -74,6 +75,33 @@ module.exports = function (api) {
   };
 
   return {
+    event: function (tags, value, type) {
+      return $this.config().flatMap(function (config) {
+        logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({tags: tags}));
+
+        let url = config['vamp.pulse.elasticsearch.url'];
+        let path = process.env.VAMP_ELASTICSEARCH_EVENT_INDEX || '';
+        if (!path) throw 'no index/type';
+
+        let index1 = path.indexOf('{');
+        let index2 = path.indexOf('}', index1);
+
+        if (index1 > -1 && index2 > -1) {
+          let part1 = path.substr(0, index1);
+          let part2 = path.substr(index1 + 1, index2 - index1 - 1).replace('dd', 'DD');
+          let part3 = path.substr(index2 + 1);
+          path = part1 + dateFormat(new Date(), part2) + part3;
+        }
+        url += url.endsWith('/') ? path : '/' + path;
+        let body = {
+          tags: tags,
+          value: value,
+          type: type
+        };
+
+        return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, JSON.stringify(body)));
+      });
+    },
     count: function (term, range, seconds) {
       return $this.config().flatMap(function (config) {
         logger.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
@@ -87,7 +115,7 @@ module.exports = function (api) {
           response = JSON.parse(response);
           return response.hits.total;
         });
-      })
+      });
     },
     average: function (term, on, seconds) {
       return $this.config().flatMap(function (config) {
@@ -110,7 +138,7 @@ module.exports = function (api) {
           return {
             total: total,
             rate: Math.round(total / seconds * 100) / 100,
-            average: Math.round(response.aggregations.agg.value * 100) / 100
+            average: Math.round(response.aggregations ? response.aggregations.agg.value * 100 : 0) / 100
           };
         });
       });
