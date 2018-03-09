@@ -86,7 +86,7 @@ module.exports = function (api) {
     });
     let body = {
       tags: Array.from(expandedTags),
-      value: '' + value,
+      value: JSON.stringify(value),
       type: type,
       timestamp: new Date().toISOString()
     };
