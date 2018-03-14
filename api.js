@@ -62,32 +62,35 @@ module.exports = function (opts) {
         cachedValues[api] = value;
       });
     },
-    put: function (api, json) {
+    put: function (api, json, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
+      qs = qs ? '?' + qs : '';
       delete cachedValues[api];
       delete cachedStreams[api];
-      logger.log('API PUT ' + api);
-      return _(http.request(this.url + api, {
+      logger.log('API PUT ' + api + qs);
+      return _(http.request(this.url + api + qs, {
         method: 'PUT',
         headers: opts.headers
       }, JSON.stringify(json)));
     },
-    post: function (api, json) {
+    post: function (api, json, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
+      qs = qs ? '?' + qs : '';
       delete cachedValues[api];
       delete cachedStreams[api];
-      logger.log('API POST ' + api);
-      return _(http.request(this.url + api, {
+      logger.log('API POST ' + api + qs);
+      return _(http.request(this.url + api + qs, {
         method: 'POST',
         headers: opts.headers
       }, JSON.stringify(json)));
     },
-    delete: function (api, json) {
+    delete: function (api, json, qs) {
       api = api.charAt(0) === '/' ? api : '/' + api;
+      qs = qs ? '?' + qs : '';
       delete cachedValues[api];
       delete cachedStreams[api];
-      logger.log('API DELETE ' + api);
-      return _(http.request(this.url + api, {
+      logger.log('API DELETE ' + api + qs);
+      return _(http.request(this.url + api + qs, {
         method: 'DELETE',
         headers: opts.headers
       }, json ? JSON.stringify(json) : ''));
