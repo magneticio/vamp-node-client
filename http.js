@@ -17,7 +17,7 @@ module.exports = function () {
 
       let request = {
         protocol: url.protocol,
-        port: url.port,
+        port: url.port || (url.protocol.startsWith('https') ? "443" : "80"),
         hostname: url.hostname,
         method: options.method || 'GET',
         headers: options.headers || {},
