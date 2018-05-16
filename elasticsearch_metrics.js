@@ -5,13 +5,17 @@ let dateFormat = require('date-fns/format');
 let logger = require('./log')();
 let http = require('./http')();
 
-module.exports = function (api) {
+module.exports = function (api, options) {
   let $this = this;
+
+  options = options || {};
 
   let elasticsearchVersion = '';
 
   let queryParam1 = 'bool';
   let queryParam2 = 'must';
+
+  let index = options.vamp_elasticsearch_event_index || process.env.VAMP_ELASTICSEARCH_EVENT_INDEX;
 
   this.config = function () {
     let configuration;
@@ -94,7 +98,7 @@ module.exports = function (api) {
     if (salt) {
       const crypto = require('crypto')
       const sha1 = crypto.createHash('sha1');
-      sha1.update(body.value + body.timestamp + salt);
+      sha1.update(body.type + body.value + body.timestamp + salt);
       body.digest = sha1.digest('hex');
     }
     return body;
@@ -106,7 +110,7 @@ module.exports = function (api) {
         logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({tags: tags}));
 
         let url = config['vamp.pulse.elasticsearch.url'];
-        let path = process.env.VAMP_ELASTICSEARCH_EVENT_INDEX || '';
+        let path = index;
         if (!path) throw 'no index/type';
 
         let index1 = path.indexOf('{');
