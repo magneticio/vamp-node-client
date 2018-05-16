@@ -74,7 +74,7 @@ module.exports = function (api) {
     return query;
   };
 
-  this.normalizeEvent = function (tags, value, type) {
+  this.normalizeEvent = function (tags, value, type, salt) {
     tags = tags || [];
     const expandedTags = new Set();
     tags.forEach(function (tag) {
@@ -91,11 +91,17 @@ module.exports = function (api) {
       timestamp: new Date().toISOString()
     };
     body[type] = value;
+    if (salt) {
+      const crypto = require('crypto')
+      const sha1 = crypto.createHash('sha1');
+      sha1.update(body.value + body.timestamp + salt);
+      body.digest = sha1.digest('hex');
+    }
     return body;
   };
 
   return {
-    event: function (tags, value, type) {
+    event: function (tags, value, type, salt) {
       return $this.config().flatMap(function (config) {
         logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({tags: tags}));
 
@@ -113,7 +119,7 @@ module.exports = function (api) {
           path = part1 + dateFormat(new Date(), part2) + part3;
         }
         url += url.endsWith('/') ? path : '/' + path;
-        const body = JSON.stringify($this.normalizeEvent(tags, value, type));
+        const body = JSON.stringify($this.normalizeEvent(tags, value, type, salt));
         return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, body));
       });
     },
