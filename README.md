@@ -49,3 +49,10 @@ metrics.average({ ft: 'abc' }, 'Tt', 30).each(function(response) {
     _.log(response);
 });
 ```
+
+### Event digest validation
+
+Run `node digest-check.js [directory] [salt]`:
+
+- `directory` - directory where event `json` files are
+- `salt` - SHA1 salt used for creating original event digests (signatures)

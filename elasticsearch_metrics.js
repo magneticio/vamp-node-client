@@ -96,7 +96,7 @@ module.exports = function (api, options) {
     };
     body[type] = value;
     if (salt) {
-      const crypto = require('crypto')
+      const crypto = require('crypto');
       const sha1 = crypto.createHash('sha1');
       sha1.update(body.type + body.value + body.timestamp + salt);
       body.digest = sha1.digest('hex');
