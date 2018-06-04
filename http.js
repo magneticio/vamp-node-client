@@ -50,6 +50,7 @@ module.exports = function () {
         });
         req.on('error', (err) => reject(err));
         if (data) {
+          logger.log('HTTP DATA [' + localIndex + '] ' + data);
           req.write(data);
         }
         req.end();
