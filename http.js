@@ -25,6 +25,9 @@ module.exports = function () {
       };
 
       logger.log('HTTP REQUEST [' + localIndex + '] ' + JSON.stringify(request));
+      if (data) {
+        logger.log('HTTP REQUEST DATA [' + localIndex + '] ' + data);
+      }
 
       return new Promise((resolve, reject) => {
         const tls = request.protocol.startsWith('https');
@@ -50,7 +53,6 @@ module.exports = function () {
         });
         req.on('error', (err) => reject(err));
         if (data) {
-          logger.log('HTTP DATA [' + localIndex + '] ' + data);
           req.write(data);
         }
         req.end();
