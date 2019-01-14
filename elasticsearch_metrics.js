@@ -12,7 +12,7 @@ module.exports = function (api, options) {
 
   const elasticSearchConfig = {
     url: process.env.VAMP_PULSE_ELASTICSEARCH_URL || api.config()['vamp.pulse.elasticsearch.url'],
-    apiVersion: process.env.VAMP_PULSE_ELASTICSEARCH_API_VERSION || api.config()['vamp.pulse.elasticsearch.api.verson'],
+    apiVersion: process.env.VAMP_PULSE_ELASTICSEARCH_API_VERSION || api.config()['vamp.pulse.elasticsearch.api.version'],
     caCertPath: process.env.VAMP_PULSE_ELASTICSEARCH_CA_CERT_PATH || api.config()['vamp.pulse.elasticsearch.ca-cert.path'],
     metricsType: process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_TYPE || api.config()['vamp.gateway-driver.elasticsearch.metrics.type'],
     metricsIndex: process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_INDEX || api.config()['vamp.gateway-driver.elasticsearch.metrics.index'],
