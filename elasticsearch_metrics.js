@@ -5,7 +5,7 @@ let dateFormat = require('date-fns/format');
 let logger = require('./log')();
 let elasticSearchClientFactory = require('./elasticsearch_client_factory');
 
-module.exports = function (api, options) {
+module.exports = function(api, options) {
   let $this = this;
 
   options = options || {};
@@ -19,9 +19,9 @@ module.exports = function (api, options) {
     eventIndex: options.vamp_elasticsearch_event_index || process.env.VAMP_ELASTICSEARCH_EVENT_INDEX
   }
 
-  const elasticSearchClient = elasticSearchClientFactory(elasticSearchConfig).create();
+  const elasticSearchClient = elasticSearchClientFactory.create(elasticSearchConfig);
 
-  this.query = function (term, seconds) {
+  this.query = function(term, seconds) {
     return {
       index: elasticSearchConfig.metricsIndex,
       type: elasticSearchConfig.metricsType,
@@ -46,10 +46,10 @@ module.exports = function (api, options) {
     };
   };
 
-  this.normalizeEvent = function (tags, value, type, salt) {
+  this.normalizeEvent = function(tags, value, type, salt) {
     tags = tags || [];
     const expandedTags = new Set();
-    tags.forEach(function (tag) {
+    tags.forEach(function(tag) {
       expandedTags.add(tag);
       let index = tag.indexOf(':');
       if (index > -1) {
@@ -73,13 +73,15 @@ module.exports = function (api, options) {
   };
 
   return {
-    event: function (tags, value, type, salt) {
+    event: function(tags, value, type, salt) {
       logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({
         tags: tags
       }));
 
       let path = elasticSearchConfig.eventIndex;
-      if (!path) throw 'no index/type';
+      if (!path) {
+        throw new Error('no index/type');
+      }
 
       let index1 = path.indexOf('{');
       let index2 = path.indexOf('}', index1);
@@ -99,7 +101,7 @@ module.exports = function (api, options) {
         body: event
       }))
     },
-    count: function (term, range, seconds) {
+    count: function(term, range, seconds) {
       logger.log('ELASTICSEARCH COUNT ' + JSON.stringify({
         term: term,
         range: range,
@@ -118,7 +120,7 @@ module.exports = function (api, options) {
         return response.hits.total;
       });
     },
-    average: function (term, on, seconds) {
+    average: function(term, on, seconds) {
       logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({
         term: term,
         on: on,
