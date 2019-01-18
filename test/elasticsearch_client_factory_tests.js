@@ -25,51 +25,113 @@ describe('When creating elasticsearch client', () => {
       const elasticSearchConfig = {
         url: 'testUrl',
         apiVersion: '6.5',
-        caCertPath: 'nonexistent/path',
+        caCertPath: 'nonexistent/ca/certificate/path',
         clientCertPath: './test/resources/client.crt',
         clientCertKeyPath: './test/resources/client.key',
         clientCertKeyPassword: 'testpassword'
       }
-      before(() => {
-        sinon.stub(fs, 'existsSync').returns(false);
-      });
-      after(() => {
-        fs.existsSync.restore();
-      });
 
       it('should throw error', () => {
-        should(() => elasticsearchClientFactory.create(elasticSearchConfig)).throw('CA certificate file not found: nonexistent/path');
+        should(() => elasticsearchClientFactory.create(elasticSearchConfig)).throw('CA certificate file not found: nonexistent/ca/certificate/path');
       });
     });
 
     describe('and CA certificate exists in the provided location', () => {
-      const elasticSearchConfig = {
-        url: 'testUrl',
-        apiVersion: '6.5',
-        caCertPath: './test/resources/ca.crt',
-        clientCertPath: './test/resources/client.crt',
-        clientCertKeyPath: './test/resources/client.key',
-        clientCertKeyPassword: 'testpassword'
-      }
-      var client;
-      before(() => {
-        sinon.stub(fs, 'existsSync').returns(true);
-        client = elasticsearchClientFactory.create(elasticSearchConfig);
-      });
-      after(() => {
-        fs.existsSync.restore();
+
+      describe('and client certificte is not enabled', () => {
+        const elasticSearchConfig = {
+          url: 'testUrl',
+          apiVersion: '6.5',
+          caCertPath: './test/resources/ca.crt',
+          clientCertPath: './test/resources/client.crt',
+          clientCertKeyPath: './test/resources/client.key',
+          clientCertKeyPassword: 'testpassword'
+        }
+        var client = elasticsearchClientFactory.create(elasticSearchConfig);
+
+        it('elasticsearch host url should be set', () => {
+          client.transport._config.host.should.equal('testUrl');
+        });
+
+        it('elasticsearch api version should be set', () => {
+          client.transport._config.apiVersion.should.equal('6.5');
+        });
+
+        it('CA certificate should be set', () => {
+          should.exist(client.transport._config.ssl.ca);
+        });
       });
 
-      it('elasticsearch host url should be set', () => {
-        client.transport._config.host.should.equal('testUrl');
-      });
+      describe('and client certificate is enabled', () => {
 
-      it('elasticsearch api version should be set', () => {
-        client.transport._config.apiVersion.should.equal('6.5');
-      });
+        describe('but client certificate does not exist in the provided location', () => {
+          const elasticSearchConfig = {
+            url: 'testUrl',
+            apiVersion: '6.5',
+            caCertPath: './test/resources/ca.crt',
+            clientCertPath: 'nonexistent/client/certificate/path',
+            clientCertKeyPath: './test/resources/client.key',
+            clientCertKeyPassword: 'testpassword'
+          }
 
-      it('CA certificate should be set', () => {
-        should.exist(client.transport._config.ssl.ca);
+          it('should throw error', () => {
+            should(() => elasticsearchClientFactory.create(elasticSearchConfig)).throw('Client certificate file not found: nonexistent/client/certificate/path');
+          });
+        });
+
+        describe('and client certificate exists in the provided location', () => {
+
+          describe('but client certificate private key does not exist in the provided location', () => {
+            const elasticSearchConfig = {
+              url: 'testUrl',
+              apiVersion: '6.5',
+              caCertPath: './test/resources/ca.crt',
+              clientCertPath: './test/resources/client.crt',
+              clientCertKeyPath: 'nonexistent/client/certificate/key/path',
+              clientCertKeyPassword: 'testpassword'
+            }
+
+            it('should throw error', () => {
+              should(() => elasticsearchClientFactory.create(elasticSearchConfig)).throw('Client certificate private key file not found: nonexistent/client/certificate/key/path');
+            });
+          });
+
+          describe('and client certificate private key exists in the provided location', () => {
+            const elasticSearchConfig = {
+              url: 'testUrl',
+              apiVersion: '6.5',
+              caCertPath: './test/resources/ca.crt',
+              clientCertPath: './test/resources/client.crt',
+              clientCertKeyPath: './test/resources/client.key',
+              clientCertKeyPassword: 'testpassword'
+            }
+            var client = elasticsearchClientFactory.create(elasticSearchConfig);
+
+            it('elasticsearch host url should be set', () => {
+              client.transport._config.host.should.equal('testUrl');
+            });
+
+            it('elasticsearch api version should be set', () => {
+              client.transport._config.apiVersion.should.equal('6.5');
+            });
+
+            it('CA certificate should be set', () => {
+              should.exist(client.transport._config.ssl.ca);
+            });
+
+            it('Client certificate should be set', () => {
+              should.exist(client.transport._config.ssl.cert);
+            });
+
+            it('Client certificate private key should be set', () => {
+              should.exist(client.transport._config.ssl.key);
+            });
+
+            it('Client certificate private key password should be set', () => {
+              should.exist(client.transport._config.ssl.passphrase);
+            });
+          });
+        });
       });
     });
   });
