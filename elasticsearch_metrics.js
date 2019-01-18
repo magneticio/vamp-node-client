@@ -15,8 +15,8 @@ module.exports = function(api, options) {
     apiVersion: process.env.VAMP_PULSE_ELASTICSEARCH_API_VERSION || api.config()['vamp.pulse.elasticsearch.api.version'],
     caCertPath: process.env.VAMP_PULSE_ELASTICSEARCH_CA_CERT_PATH || api.config()['vamp.pulse.elasticsearch.ca-cert.path'],
     clientCertPath: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_CERT_PATH || api.config()['vamp.pulse.elasticsearch.client-cert.path'],
-    clientCertKeyPath: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_KEY_PATH || api.config()['vamp.pulse.elasticsearch.client-key.path'],
-    clientCertKeyPassword: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_KEY_PASWORD || api.config()['vamp.pulse.elasticsearch.client-key.password'],
+    clientCertKeyPath: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_CERT_KEY_PATH || api.config()['vamp.pulse.elasticsearch.client-cert.key.path'],
+    clientCertKeyPassword: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_CERT_KEY_PASSWORD || api.config()['vamp.pulse.elasticsearch.client-cert.key.password'],
     metricsType: process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_TYPE || api.config()['vamp.gateway-driver.elasticsearch.metrics.type'],
     metricsIndex: process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_INDEX || api.config()['vamp.gateway-driver.elasticsearch.metrics.index'],
     eventIndex: options.vamp_elasticsearch_event_index || process.env.VAMP_ELASTICSEARCH_EVENT_INDEX
