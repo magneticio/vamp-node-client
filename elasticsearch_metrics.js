@@ -3,85 +3,56 @@
 let _ = require('highland');
 let dateFormat = require('date-fns/format');
 let logger = require('./log')();
-let http = require('./http')();
+let elasticSearchClientFactory = require('./elasticsearch_client_factory');
 
-module.exports = function (api, options) {
+module.exports = function(api, options) {
   let $this = this;
 
   options = options || {};
 
-  let elasticsearchVersion = '';
+  const elasticSearchConfig = {
+    url: process.env.VAMP_PULSE_ELASTICSEARCH_URL || api.config()['vamp.pulse.elasticsearch.url'],
+    apiVersion: process.env.VAMP_PULSE_ELASTICSEARCH_API_VERSION || api.config()['vamp.pulse.elasticsearch.api.version'],
+    caCertPath: process.env.VAMP_PULSE_ELASTICSEARCH_CA_CERT_PATH || api.config()['vamp.pulse.elasticsearch.ca-cert.path'],
+    clientCertPath: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_CERT_PATH || api.config()['vamp.pulse.elasticsearch.client-cert.path'],
+    clientCertKeyPath: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_CERT_KEY_PATH || api.config()['vamp.pulse.elasticsearch.client-cert.key.path'],
+    clientCertKeyPassword: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_CERT_KEY_PASSWORD || api.config()['vamp.pulse.elasticsearch.client-cert.key.password'],
+    metricsType: process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_TYPE || api.config()['vamp.gateway-driver.elasticsearch.metrics.type'],
+    metricsIndex: process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_INDEX || api.config()['vamp.gateway-driver.elasticsearch.metrics.index'],
+    eventIndex: options.vamp_elasticsearch_event_index || process.env.VAMP_ELASTICSEARCH_EVENT_INDEX
+  }
 
-  let queryParam1 = 'bool';
-  let queryParam2 = 'must';
+  const elasticSearchClient = elasticSearchClientFactory.create(elasticSearchConfig);
 
-  let index = options.vamp_elasticsearch_event_index || process.env.VAMP_ELASTICSEARCH_EVENT_INDEX;
-
-  this.config = function () {
-    let configuration;
-    if (process.env.VAMP_PULSE_ELASTICSEARCH_URL) {
-      let config = {};
-      config['vamp.pulse.elasticsearch.url'] = process.env.VAMP_PULSE_ELASTICSEARCH_URL;
-      config['vamp.gateway-driver.elasticsearch.metrics.type'] = process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_TYPE;
-      config['vamp.gateway-driver.elasticsearch.metrics.index'] = process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_INDEX;
-      configuration = _([config]);
-    } else {
-      configuration = api.config();
-    }
-
-    if (!elasticsearchVersion) {
-      let cfg;
-      return configuration.flatMap((data) => {
-        cfg = data;
-        return _(http.get(data['vamp.pulse.elasticsearch.url']).then(JSON.parse)).map((es) => {
-          elasticsearchVersion = Number(es.version.number.substr(0, es.version.number.indexOf('.')));
-          if (elasticsearchVersion < 5) {
-            queryParam1 = 'filtered';
-            queryParam2 = 'query';
-          }
-          return cfg;
-        });
-      });
-    }
-
-    return configuration;
-  };
-
-  this.query = function (config, term, seconds) {
-    const query = {
-      index: config['vamp.gateway-driver.elasticsearch.metrics.index'],
-      type: config['vamp.gateway-driver.elasticsearch.metrics.type'],
+  this.query = function(term, seconds) {
+    return {
+      index: elasticSearchConfig.metricsIndex,
+      type: elasticSearchConfig.metricsType,
       body: {
         size: 0,
-        query: {}
-      }
-    };
-    query.body.query[queryParam1] = {
-      filter: {
-        bool: {
-          must: [
-            {
-              term: term
-            },
-            {
-              range: {
-                "@timestamp": {
-                  gt: "now-" + seconds + "s"
+        query: {
+          bool: {
+            filter: [{
+                term: term
+              },
+              {
+                range: {
+                  "@timestamp": {
+                    gt: "now-" + seconds + "s"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       }
     };
-    query.body.query[queryParam1][queryParam2] = { match_all: {} };
-    return query;
   };
 
-  this.normalizeEvent = function (tags, value, type, salt) {
+  this.normalizeEvent = function(tags, value, type, salt) {
     tags = tags || [];
     const expandedTags = new Set();
-    tags.forEach(function (tag) {
+    tags.forEach(function(tag) {
       expandedTags.add(tag);
       let index = tag.indexOf(':');
       if (index > -1) {
@@ -105,67 +76,79 @@ module.exports = function (api, options) {
   };
 
   return {
-    event: function (tags, value, type, salt) {
-      return $this.config().flatMap(function (config) {
-        logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({tags: tags}));
+    event: function(tags, value, type, salt) {
+      logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({
+        tags: tags
+      }));
 
-        let url = config['vamp.pulse.elasticsearch.url'];
-        let path = index;
-        if (!path) throw 'no index/type';
+      let path = elasticSearchConfig.eventIndex;
+      if (!path) {
+        throw new Error('no index/type');
+      }
 
-        let index1 = path.indexOf('{');
-        let index2 = path.indexOf('}', index1);
+      let index1 = path.indexOf('{');
+      let index2 = path.indexOf('}', index1);
 
-        if (index1 > -1 && index2 > -1) {
-          let part1 = path.substr(0, index1);
-          let part2 = path.substr(index1 + 1, index2 - index1 - 1).replace('dd', 'DD');
-          let part3 = path.substr(index2 + 1);
-          path = part1 + dateFormat(new Date(), part2) + part3;
-        }
-        url += url.endsWith('/') ? path : '/' + path;
-        const body = JSON.stringify($this.normalizeEvent(tags, value, type, salt));
-        return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, body));
+      if (index1 > -1 && index2 > -1) {
+        let part1 = path.substr(0, index1);
+        let part2 = path.substr(index1 + 1, index2 - index1 - 1).replace('dd', 'DD');
+        let part3 = path.substr(index2 + 1);
+        path = part1 + dateFormat(new Date(), part2) + part3;
+      }
+
+      const event = $this.normalizeEvent(tags, value, type, salt);
+
+      return _(elasticSearchClient.index({
+        index: path,
+        type: type,
+        body: event
+      }))
+    },
+    count: function(term, range, seconds) {
+      logger.log('ELASTICSEARCH COUNT ' + JSON.stringify({
+        term: term,
+        range: range,
+        seconds: seconds
+      }));
+
+      let query = $this.query(term, seconds);
+      query.body.query.bool.filter.push({
+        range: range
+      });
+
+      return _(
+        elasticSearchClient
+        .search(query)
+      ).map((response) => {
+        return response.hits.total;
       });
     },
-    count: function (term, range, seconds) {
-      return $this.config().flatMap(function (config) {
-        logger.log('ELASTICSEARCH COUNT ' + JSON.stringify({term: term, range: range, seconds: seconds}));
+    average: function(term, on, seconds) {
+      logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({
+        term: term,
+        on: on,
+        seconds: seconds
+      }));
 
-        let url = config['vamp.pulse.elasticsearch.url'];
-        let query = $this.query(config, term, seconds);
-        query.body.query[queryParam1].filter.bool.must.push({range: range});
-        url += '/' + query.index + '/' + query.type + '/_search';
-
-        return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, JSON.stringify(query.body))).map(function (response) {
-          response = JSON.parse(response);
-          return response.hits.total;
-        });
-      });
-    },
-    average: function (term, on, seconds) {
-      return $this.config().flatMap(function (config) {
-        logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({term: term, on: on, seconds: seconds}));
-
-        let url = config['vamp.pulse.elasticsearch.url'];
-        let query = $this.query(config, term, seconds);
-        query.body.aggregations = {
-          agg: {
-            avg: {
-              field: on
-            }
+      let query = $this.query(term, seconds);
+      query.body.aggregations = {
+        agg: {
+          avg: {
+            field: on
           }
-        };
-        url += '/' + query.index + '/' + query.type + '/_search';
+        }
+      };
 
-        return _(http.request(url, {method: 'POST', headers: {'Content-Type': 'application/json'}}, JSON.stringify(query.body))).map(function (response) {
-          response = JSON.parse(response);
-          let total = response.hits.total;
-          return {
-            total: total,
-            rate: Math.round(total / seconds * 100) / 100,
-            average: Math.round(response.aggregations ? response.aggregations.agg.value * 100 : 0) / 100
-          };
-        });
+      return _(
+        elasticSearchClient
+        .search(query)
+      ).map((response) => {
+        let total = response.hits.total;
+        return {
+          total: total,
+          rate: Math.round(total / seconds * 100) / 100,
+          average: Math.round(response.aggregations ? response.aggregations.agg.value * 100 : 0) / 100
+        };
       });
     }
   }
