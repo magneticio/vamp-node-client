@@ -150,6 +150,63 @@ module.exports = function(api, options) {
           average: Math.round(response.aggregations ? response.aggregations.agg.value * 100 : 0) / 100
         };
       });
+    },
+    stats: function(term, on, seconds) {
+      logger.log('ELASTICSEARCH STATS ' + JSON.stringify({
+        term: term,
+        on: on,
+        seconds: seconds
+      }));
+
+      let query = $this.query(term, seconds);
+      query.body.aggregations = {
+        agg: {
+          extended_stats: {
+            field: on
+          }
+        }
+      };
+
+      return _(
+          elasticSearchClient
+              .search(query)
+      ).map((response) => {
+        let total = response.hits.total;
+        return {
+          total: total,
+          rate: Math.round(total / seconds * 100) / 100,
+          stats: response.aggregations.agg
+        };
+      });
+    },
+    percentile: function(term, on, seconds, percentilesValues) {
+      logger.log('ELASTICSEARCH PERCENTILE ' + JSON.stringify({
+        term: term,
+        on: on,
+        seconds: seconds
+      }));
+
+      let query = $this.query(term, seconds);
+      query.body.aggregations = {
+        agg: {
+          percentiles : {
+            field : on,
+            percents : percentilesValues
+          }
+        }
+      };
+
+      return _(
+          elasticSearchClient
+              .search(query)
+      ).map((response) => {
+        let total = response.hits.total;
+        return {
+          total: total,
+          rate: Math.round(total / seconds * 100) / 100,
+          percentile: response.aggregations.agg.values
+        };
+      });
     }
   }
 };
