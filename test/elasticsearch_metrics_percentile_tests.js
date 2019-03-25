@@ -6,11 +6,9 @@ var sinon = require('sinon');
 describe('when getting percentile', () => {
     var responseStream, searchQuery;
     before(() => {
-        const elasticsearchClientStub = sinon.stub({
-            index: (eventDefinition) => {
-            },
-            search: (query) => {
-                return {
+        let clientStub = {
+            search: sinon.stub().returns(new Promise((resolve) => {
+                resolve({
                     took: 1,
                     timed_out: false,
                     _shards:
@@ -43,12 +41,10 @@ describe('when getting percentile', () => {
                                         }
                                 }
                         }
-                }
-            }
-
-
-        });
-        sinon.stub(elasticsearchClientFactory, 'create').returns(elasticsearchClientStub);
+                })
+            }))
+        };
+        sinon.stub(elasticsearchClientFactory, 'create').returns(clientStub);
 
         const options = {}
         const apiStub = {
@@ -60,8 +56,8 @@ describe('when getting percentile', () => {
             }
         };
         const elasticsearchMetrics = new metrics(apiStub, options);
-        responseStream = elasticsearchMetrics.percentile('testTerm', 'testAggregationField', 100, [50,66,75,80,90,95,98,99,100]);
-        const searchCall = elasticsearchClientStub.search.lastCall;
+        responseStream = elasticsearchMetrics.percentile('testTerm', 'testAggregationField', 100, [50, 66, 75, 80, 90, 95, 98, 99, 100]);
+        const searchCall = clientStub.search.lastCall;
         searchQuery = searchCall.args[0];
     });
 
@@ -91,21 +87,25 @@ describe('when getting percentile', () => {
     it('search query aggregation should be set', () => {
         const aggregationField = searchQuery.body.aggregations.agg.percentiles.field;
         aggregationField.should.equal('testAggregationField');
-        // const percents = searchQuery.body.aggregations.agg.percentiles.percents;
-        // percents.should.equal([50,66,75,80,90,95,98,99,100]);
+        const percents = searchQuery.body.aggregations.agg.percentiles.percents;
+        percents[0].should.equal(50);
+        percents[1].should.equal(66);
+        percents[2].should.equal(75);
+        percents[3].should.equal(80);
+        percents[4].should.equal(90);
+        percents[5].should.equal(95);
+        percents[6].should.equal(98);
+        percents[7].should.equal(99);
+        percents[8].should.equal(100);
     });
 
     it('search query should return min metrics', () => {
         responseStream
-            .tap(r => console.log(r))
             .tap(response => {
-            console.log(response);
-            response.total.should.equal(10);
-            response.rate.should.equal(0.1);
-            response.stats.min.should.equal(0);
-            response.stats.max.should.equal(1939);
-            response.stats.avg.should.equal(228.11);
-            response.stats.std_deviation.should.equal(571.65);
-        }).done();
+                response.total.should.equal(18);
+                response.rate.should.equal(0.18);
+                response.percentile['50.0'].should.equal(0.5);
+            }).done(r => {
+        });
     });
 });

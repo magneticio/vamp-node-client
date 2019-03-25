@@ -5,7 +5,7 @@ const apiStub = {
     config: () => {
         return {
             'vamp.gateway-driver.elasticsearch.metrics.type': 'log',
-            'vamp.gateway-driver.elasticsearch.metrics.index': 'vamp-vga-6d1339c7c7a1ac54246a57320bb1dd15176ce29-2019-03-22'
+            'vamp.gateway-driver.elasticsearch.metrics.index': 'vamp-vga-6d1339c7c7a1ac54246a57320bb1dd15176ce29-2019-03-25'
         };
     }
 };
@@ -14,12 +14,12 @@ const elasticsearchMetrics = new metrics(apiStub, {});
 
 
 elasticsearchMetrics.average({ft: 'virtual_hosts'}, 'Tt', 1000000).head().each(function(value) {
-    // console.log(value);
+    console.log(value);
     // expected output: "foo"
 });
 
 elasticsearchMetrics.stats({ft: 'virtual_hosts'}, 'Tt', 1000000).head().each(function(value) {
-    // console.log(value);
+    console.log(value);
     // expected output: "foo"
 });
 
@@ -29,4 +29,4 @@ elasticsearchMetrics.percentile({ft: 'virtual_hosts'}, 'Tt', 1000000, [50,66,75,
     // expected output: "foo"
 });
 
-//TODO: trim doubles
+//TODO: trim doubles + map stats

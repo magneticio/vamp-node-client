@@ -1,16 +1,13 @@
 var metrics = require('../elasticsearch_metrics')
 var elasticsearchClientFactory = require('../elasticsearch_client_factory')
-var should = require('should');
 var sinon = require('sinon');
 
 describe('when getting stats', () => {
     var responseStream, searchQuery;
     before(() => {
-        const elasticsearchClientStub = sinon.stub({
-            index: (eventDefinition) => {
-            },
-            search: (query) => {
-                return {
+        let clientStub = {
+            search: sinon.stub().returns(new Promise((resolve) => {
+                resolve({
                     took: 0,
                     timed_out: false,
                     _shards:
@@ -39,10 +36,11 @@ describe('when getting stats', () => {
                                     std_deviation: 571.65
                                 }
                         }
-                }
-            }
-        });
-        sinon.stub(elasticsearchClientFactory, 'create').returns(elasticsearchClientStub);
+                })
+            }))
+        };
+
+        sinon.stub(elasticsearchClientFactory, 'create').returns(clientStub);
 
         const options = {}
         const apiStub = {
@@ -55,7 +53,7 @@ describe('when getting stats', () => {
         };
         const elasticsearchMetrics = new metrics(apiStub, options);
         responseStream = elasticsearchMetrics.stats('testTerm', 'testAggregationField', 100);
-        const searchCall = elasticsearchClientStub.search.lastCall;
+        const searchCall = clientStub.search.lastCall;
         searchQuery = searchCall.args[0];
     });
 
@@ -87,14 +85,14 @@ describe('when getting stats', () => {
         aggregationField.should.equal('testAggregationField');
     });
 
-    it('search query should return min metrics', () => {
+    it('search query should return stats metrics', () => {
         responseStream.head().tap(response => {
-            response.total.should.equal(10);
-            response.rate.should.equal(0.1);
+            response.total.should.equal(17);
             response.stats.min.should.equal(0);
             response.stats.max.should.equal(1939);
             response.stats.avg.should.equal(228.11);
             response.stats.std_deviation.should.equal(571.65);
-        }).done();
+        }).done(r => {
+        });
     });
 });
