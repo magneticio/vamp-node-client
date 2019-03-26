@@ -13,8 +13,10 @@ describe('When publishing an event', () => {
 
   before(() => {
     elasticsearchClientStub = sinon.stub({
-      index: (eventDefinition) => {},
-      search: (query) => {}
+      index: (eventDefinition) => {
+      },
+      search: (query) => {
+      }
     });
     sinon.stub(elasticsearchClientFactory, 'create').returns(elasticsearchClientStub);
   });

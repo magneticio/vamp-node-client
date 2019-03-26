@@ -5,7 +5,7 @@ let dateFormat = require('date-fns/format');
 let logger = require('./log')();
 let elasticSearchClientFactory = require('./elasticsearch_client_factory');
 
-module.exports = function (api, options) {
+module.exports = function(api, options) {
   let $this = this;
 
   options = options || {};
@@ -24,7 +24,7 @@ module.exports = function (api, options) {
 
   const elasticSearchClient = elasticSearchClientFactory.create(elasticSearchConfig);
 
-  this.query = function (term, seconds) {
+  this.query = function(term, seconds) {
     return {
       index: elasticSearchConfig.metricsIndex,
       type: elasticSearchConfig.metricsType,
@@ -49,10 +49,10 @@ module.exports = function (api, options) {
     };
   };
 
-  this.normalizeEvent = function (tags, value, type, salt) {
+  this.normalizeEvent = function(tags, value, type, salt) {
     tags = tags || [];
     const expandedTags = new Set();
-    tags.forEach(function (tag) {
+    tags.forEach(function(tag) {
       expandedTags.add(tag);
       let index = tag.indexOf(':');
       if (index > -1) {
@@ -76,7 +76,7 @@ module.exports = function (api, options) {
   };
 
   return {
-    event: function (tags, value, type, salt) {
+    event: function(tags, value, type, salt) {
       logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({
         tags: tags
       }));
@@ -104,7 +104,7 @@ module.exports = function (api, options) {
         body: event
       }))
     },
-    count: function (term, range, seconds) {
+    count: function(term, range, seconds) {
       logger.log('ELASTICSEARCH COUNT ' + JSON.stringify({
         term: term,
         range: range,
@@ -123,7 +123,7 @@ module.exports = function (api, options) {
         return response.hits.total;
       });
     },
-    average: function (term, on, seconds) {
+    average: function(term, on, seconds) {
       logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({
         term: term,
         on: on,
@@ -151,7 +151,7 @@ module.exports = function (api, options) {
         };
       });
     },
-    stats: function (term, on, seconds) {
+    stats: function(term, on, seconds) {
       logger.log('ELASTICSEARCH STATS ' + JSON.stringify({
         term: term,
         on: on,
@@ -180,7 +180,7 @@ module.exports = function (api, options) {
         };
       });
     },
-    percentile: function (term, on, seconds, percentilesValues) {
+    percentile: function(term, on, seconds, percentilesValues) {
       logger.log('ELASTICSEARCH PERCENTILE ' + JSON.stringify({
         term: term,
         on: on,
