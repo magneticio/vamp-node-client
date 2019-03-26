@@ -15,18 +15,12 @@ const elasticsearchMetrics = new metrics(apiStub, {});
 
 elasticsearchMetrics.average({ft: 'virtual_hosts'}, 'Tt', 1000000).head().each(function(value) {
     console.log(value);
-    // expected output: "foo"
 });
 
 elasticsearchMetrics.stats({ft: 'virtual_hosts'}, 'Tt', 1000000).head().each(function(value) {
     console.log(value);
-    // expected output: "foo"
 });
 
 elasticsearchMetrics.percentile({ft: 'virtual_hosts'}, 'Tt', 1000000, [50,66,75,80,90,95,98,99,100]).head().each(function(value) {
     console.log(value);
-    // console.log(value.percentile['50.0']);
-    // expected output: "foo"
 });
-
-//TODO: trim doubles + map stats
