@@ -1,6 +1,5 @@
 var metrics = require('../elasticsearch_metrics')
 var elasticsearchClientFactory = require('../elasticsearch_client_factory')
-var should = require('should');
 var sinon = require('sinon');
 
 describe('when getting percentile', () => {
@@ -105,6 +104,14 @@ describe('when getting percentile', () => {
         response.total.should.equal(18);
         response.rate.should.equal(0.18);
         response.percentile['50.0'].should.equal(0.5);
+        response.percentile['66.0'].should.equal(2);
+        response.percentile['75.0'].should.equal(2);
+        response.percentile['80.0'].should.equal(2.60);
+        response.percentile['90.0'].should.equal(707.60);
+        response.percentile['95.0'].should.equal(1655.09);
+        response.percentile['98.0'].should.equal(1825.44);
+        response.percentile['99.0'].should.equal(1882.21);
+        response.percentile['100.0'].should.equal(1939);
       }).done(r => {
     });
   });

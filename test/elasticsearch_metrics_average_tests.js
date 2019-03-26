@@ -1,6 +1,5 @@
 var metrics = require('../elasticsearch_metrics')
 var elasticsearchClientFactory = require('../elasticsearch_client_factory')
-var should = require('should');
 var sinon = require('sinon');
 
 describe('when getting average', () => {
