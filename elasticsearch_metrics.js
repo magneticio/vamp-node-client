@@ -173,7 +173,10 @@ module.exports = function (api, options) {
                 return {
                     total: total,
                     rate: Math.round(total / seconds * 100) / 100,
-                    stats: response.aggregations.agg
+                    avg: Math.round(response.aggregations.agg.avg * 100) / 100,
+                    min: Math.round(response.aggregations.agg.min * 100) / 100,
+                    max: Math.round(response.aggregations.agg.max * 100) / 100,
+                    stdDeviation: Math.round(response.aggregations.agg.std_deviation * 100) / 100
                 };
             });
         },

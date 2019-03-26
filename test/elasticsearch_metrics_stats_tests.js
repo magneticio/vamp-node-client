@@ -29,11 +29,11 @@ describe('when getting stats', () => {
                                     count: 17,
                                     min: 0,
                                     max: 1939,
-                                    avg: 228.11,
+                                    avg: 228.11444,
                                     sum: 3878,
                                     sum_of_squares: 64,
                                     variance: 326791.63,
-                                    std_deviation: 571.65
+                                    std_deviation: 571.6543332
                                 }
                         }
                 })
@@ -88,10 +88,10 @@ describe('when getting stats', () => {
     it('search query should return stats metrics', () => {
         responseStream.head().tap(response => {
             response.total.should.equal(17);
-            response.stats.min.should.equal(0);
-            response.stats.max.should.equal(1939);
-            response.stats.avg.should.equal(228.11);
-            response.stats.std_deviation.should.equal(571.65);
+            response.min.should.equal(0);
+            response.max.should.equal(1939);
+            response.avg.should.equal(228.11);
+            response.stdDeviation.should.equal(571.65);
         }).done(r => {
         });
     });
