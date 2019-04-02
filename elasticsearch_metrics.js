@@ -78,7 +78,10 @@ module.exports = function(api, options) {
   return {
     event: function(tags, value, type, salt) {
       logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({
-        tags: tags
+        tags: tags,
+        value: value,
+        type: type,
+        salt: salt
       }));
 
       let path = elasticSearchConfig.eventIndex;
@@ -92,8 +95,11 @@ module.exports = function(api, options) {
       if (index1 > -1 && index2 > -1) {
         let part1 = path.substr(0, index1);
         let part2 = path.substr(index1 + 1, index2 - index1 - 1).replace('dd', 'DD');
-        let part3 = path.substr(index2 + 1);
-        path = part1 + dateFormat(new Date(), part2) + part3;
+        path = part1 + dateFormat(new Date(), part2);
+      }
+
+      if(!type) {
+         type = path.substr(index2 + 1);
       }
 
       const event = $this.normalizeEvent(tags, value, type, salt);
