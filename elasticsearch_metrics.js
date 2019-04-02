@@ -176,8 +176,9 @@ module.exports = function(api, options) {
 
       return _(elasticSearchClient
         .search(query)).map((response) => {
+        logger.log('ELASTICSEARCH STATS RESPONSE: ' + JSON.stringify(response));
         let total = response.hits.total;
-        return {
+        let returnValue = {
           total: total,
           rate: Math.round(total / seconds * 100) / 100,
           avg: Math.round(response.aggregations.agg.avg * 100) / 100,
@@ -185,6 +186,8 @@ module.exports = function(api, options) {
           max: Math.round(response.aggregations.agg.max * 100) / 100,
           stdDeviation: Math.round(response.aggregations.agg.std_deviation * 100) / 100
         };
+        logger.log('ELASTICSEARCH STATS RETURN VALUE: ' + JSON.stringify(returnValue));
+        return returnValue;
       });
     },
     percentile: function(term, on, seconds, percentilesValues) {
@@ -208,12 +211,15 @@ module.exports = function(api, options) {
         elasticSearchClient
           .search(query)
       ).map((response) => {
+        logger.log('ELASTICSEARCH PERCENTILE RESPONSE: ' + JSON.stringify(response));
         let total = response.hits.total;
-        return {
+        let returnValue = {
           total: total,
           rate: Math.round(total / seconds * 100) / 100,
           percentile: response.aggregations.agg.values
         };
+        logger.log('ELASTICSEARCH STATS RETURN VALUE: ' + JSON.stringify(returnValue));
+        return returnValue;
       });
     }
   }
