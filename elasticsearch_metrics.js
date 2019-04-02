@@ -104,6 +104,7 @@ module.exports = function(api, options) {
 
       const event = $this.normalizeEvent(tags, value, type, salt);
 
+      logger.log('ELASTICSEARCH CLIENT CALL: index: ' + path + ', type: ' + type + ', body: ' + JSON.stringify(event));
       return _(elasticSearchClient.index({
         index: path,
         type: type,
