@@ -215,7 +215,7 @@ module.exports = function(api, options) {
         let total = response.hits.total;
         let percentiles = response.aggregations.agg.values;
         Object.keys(percentiles).map(function(key, index) {
-          percentiles[key] = percentiles[key] || 0
+          percentiles[key] = percentiles[key] === "NaN" ? 0 : percentiles[key];
         });
         let returnValue = {
           total: total,
