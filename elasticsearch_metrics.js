@@ -213,10 +213,14 @@ module.exports = function(api, options) {
       ).map((response) => {
         logger.log('ELASTICSEARCH PERCENTILE RESPONSE: ' + JSON.stringify(response));
         let total = response.hits.total;
+        let percentiles = response.aggregations.agg.values;
+        Object.keys(percentiles).map(function(key, index) {
+          percentiles[key] = percentiles[key] || 0
+        });
         let returnValue = {
           total: total,
           rate: Math.round(total / seconds * 100) / 100,
-          percentile: response.aggregations.agg.values
+          percentile: percentiles
         };
         logger.log('ELASTICSEARCH STATS RETURN VALUE: ' + JSON.stringify(returnValue));
         return returnValue;
