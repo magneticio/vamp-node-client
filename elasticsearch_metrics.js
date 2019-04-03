@@ -104,7 +104,6 @@ module.exports = function(api, options) {
 
       const event = $this.normalizeEvent(tags, value, type, salt);
 
-      logger.log('ELASTICSEARCH CLIENT CALL: index: ' + path + ', type: ' + type + ', body: ' + JSON.stringify(event));
       return _(elasticSearchClient.index({
         index: path,
         type: type,
@@ -176,7 +175,6 @@ module.exports = function(api, options) {
 
       return _(elasticSearchClient
         .search(query)).map((response) => {
-        logger.log('ELASTICSEARCH STATS RESPONSE: ' + JSON.stringify(response));
         let total = response.hits.total;
         let returnValue = {
           total: total,
@@ -186,7 +184,6 @@ module.exports = function(api, options) {
           max: Math.round(response.aggregations.agg.max * 100) / 100,
           stdDeviation: Math.round(response.aggregations.agg.std_deviation * 100) / 100
         };
-        logger.log('ELASTICSEARCH STATS RETURN VALUE: ' + JSON.stringify(returnValue));
         return returnValue;
       });
     },
@@ -211,7 +208,6 @@ module.exports = function(api, options) {
         elasticSearchClient
           .search(query)
       ).map((response) => {
-        logger.log('ELASTICSEARCH PERCENTILE RESPONSE: ' + JSON.stringify(response));
         let total = response.hits.total;
         let percentiles = response.aggregations.agg.values;
         Object.keys(percentiles).map(function(key, index) {
@@ -222,7 +218,6 @@ module.exports = function(api, options) {
           rate: Math.round(total / seconds * 100) / 100,
           percentile: percentiles
         };
-        logger.log('ELASTICSEARCH STATS RETURN VALUE: ' + JSON.stringify(returnValue));
         return returnValue;
       });
     }

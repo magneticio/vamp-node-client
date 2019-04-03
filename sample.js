@@ -1,7 +1,7 @@
 'use strict';
 
 var metrics = require('./elasticsearch_metrics')
-const apiStub = {
+const apiConfig = {
     config: () => {
         return {
             'vamp.gateway-driver.elasticsearch.metrics.type': 'log',
@@ -10,7 +10,7 @@ const apiStub = {
     }
 };
 
-const elasticsearchMetrics = new metrics(apiStub, {});
+const elasticsearchMetrics = new metrics(apiConfig, {});
 
 
 elasticsearchMetrics.average({ft: 'virtual_hosts'}, 'Tt', 1000000).head().each(function(value) {
