@@ -33,8 +33,8 @@ module.exports = function(api, options) {
         query: {
           bool: {
             filter: [{
-                term: term
-              },
+              term: term
+            },
               {
                 range: {
                   "@timestamp": {
@@ -78,7 +78,10 @@ module.exports = function(api, options) {
   return {
     event: function(tags, value, type, salt) {
       logger.log('ELASTICSEARCH EVENT ' + JSON.stringify({
-        tags: tags
+        tags: tags,
+        value: value,
+        type: type,
+        salt: salt
       }));
 
       let path = elasticSearchConfig.eventIndex;
@@ -92,8 +95,11 @@ module.exports = function(api, options) {
       if (index1 > -1 && index2 > -1) {
         let part1 = path.substr(0, index1);
         let part2 = path.substr(index1 + 1, index2 - index1 - 1).replace('dd', 'DD');
-        let part3 = path.substr(index2 + 1);
-        path = part1 + dateFormat(new Date(), part2) + part3;
+        path = part1 + dateFormat(new Date(), part2);
+      }
+
+      if(!type) {
+         type = path.substr(index2 + 1);
       }
 
       const event = $this.normalizeEvent(tags, value, type, salt);
@@ -118,7 +124,7 @@ module.exports = function(api, options) {
 
       return _(
         elasticSearchClient
-        .search(query)
+          .search(query)
       ).map((response) => {
         return response.hits.total;
       });
@@ -141,7 +147,7 @@ module.exports = function(api, options) {
 
       return _(
         elasticSearchClient
-        .search(query)
+          .search(query)
       ).map((response) => {
         let total = response.hits.total;
         return {
@@ -149,6 +155,70 @@ module.exports = function(api, options) {
           rate: Math.round(total / seconds * 100) / 100,
           average: Math.round(response.aggregations ? response.aggregations.agg.value * 100 : 0) / 100
         };
+      });
+    },
+    stats: function(term, on, seconds) {
+      logger.log('ELASTICSEARCH STATS ' + JSON.stringify({
+        term: term,
+        on: on,
+        seconds: seconds
+      }));
+
+      let query = $this.query(term, seconds);
+      query.body.aggregations = {
+        agg: {
+          extended_stats: {
+            field: on
+          }
+        }
+      };
+
+      return _(elasticSearchClient
+        .search(query)).map((response) => {
+        let total = response.hits.total;
+        let returnValue = {
+          total: total,
+          rate: Math.round(total / seconds * 100) / 100,
+          avg: Math.round(response.aggregations.agg.avg * 100) / 100,
+          min: Math.round(response.aggregations.agg.min * 100) / 100,
+          max: Math.round(response.aggregations.agg.max * 100) / 100,
+          stdDeviation: Math.round(response.aggregations.agg.std_deviation * 100) / 100
+        };
+        return returnValue;
+      });
+    },
+    percentile: function(term, on, seconds, percentilesValues) {
+      logger.log('ELASTICSEARCH PERCENTILE ' + JSON.stringify({
+        term: term,
+        on: on,
+        seconds: seconds
+      }));
+
+      let query = $this.query(term, seconds);
+      query.body.aggregations = {
+        agg: {
+          percentiles: {
+            field: on,
+            percents: percentilesValues
+          }
+        }
+      };
+
+      return _(
+        elasticSearchClient
+          .search(query)
+      ).map((response) => {
+        let total = response.hits.total;
+        let percentiles = response.aggregations.agg.values;
+        Object.keys(percentiles).map(function(key, index) {
+          percentiles[key] = percentiles[key] === "NaN" ? 0 : Math.round(percentiles[key] * 100) / 100;
+        });
+        let returnValue = {
+          total: total,
+          rate: Math.round(total / seconds * 100) / 100,
+          percentile: percentiles
+        };
+        return returnValue;
       });
     }
   }

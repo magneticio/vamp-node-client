@@ -2,27 +2,47 @@ var metrics = require('../elasticsearch_metrics')
 var elasticsearchClientFactory = require('../elasticsearch_client_factory')
 var sinon = require('sinon');
 
-describe('when getting average', () => {
+describe('when getting stats', () => {
   var responseStream, searchQuery;
   before(() => {
-    const clientStub = {
+    let clientStub = {
       search: sinon.stub().returns(new Promise((resolve) => {
-        resolve(
-          {
-            hits: {
-              total: 10
+        resolve({
+          took: 0,
+          timed_out: false,
+          _shards:
+            {
+              total: 5,
+              successful: 5,
+              skipped: 0,
+              failed: 0,
             },
-            aggregations: {
-              agg: {
-                value: 50
-              }
+          hits:
+            {
+              total: 17,
+              max_score: 0,
+            },
+          aggregations:
+            {
+              agg:
+                {
+                  count: 17,
+                  min: 0,
+                  max: 1939,
+                  avg: 228.11444,
+                  sum: 3878,
+                  sum_of_squares: 64,
+                  variance: 326791.63,
+                  std_deviation: 571.6543332
+                }
             }
-          });
+        })
       }))
     };
+
     sinon.stub(elasticsearchClientFactory, 'create').returns(clientStub);
 
-    const options = {};
+    const options = {}
     const apiStub = {
       config: () => {
         return {
@@ -32,7 +52,7 @@ describe('when getting average', () => {
       }
     };
     const elasticsearchMetrics = new metrics(apiStub, options);
-    responseStream = elasticsearchMetrics.average('testTerm', 'testAggregationField', 100);
+    responseStream = elasticsearchMetrics.stats('testTerm', 'testAggregationField', 100);
     const searchCall = clientStub.search.lastCall;
     searchQuery = searchCall.args[0];
   });
@@ -61,15 +81,17 @@ describe('when getting average', () => {
   });
 
   it('search query aggregation should be set', () => {
-    const aggregationField = searchQuery.body.aggregations.agg.avg.field;
+    const aggregationField = searchQuery.body.aggregations.agg.extended_stats.field;
     aggregationField.should.equal('testAggregationField');
   });
 
-  it('search query should return average metrics', () => {
+  it('search query should return stats metrics', () => {
     responseStream.head().tap(response => {
-      response.total.should.equal(10);
-      response.rate.should.equal(0.1);
-      response.average.should.equal(50);
+      response.total.should.equal(17);
+      response.min.should.equal(0);
+      response.max.should.equal(1939);
+      response.avg.should.equal(228.11);
+      response.stdDeviation.should.equal(571.65);
     }).done(r => {
     });
   });

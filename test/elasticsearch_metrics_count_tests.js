@@ -1,19 +1,19 @@
 var metrics = require('../elasticsearch_metrics')
 var elasticsearchClientFactory = require('../elasticsearch_client_factory')
-var should = require('should');
 var sinon = require('sinon');
 
 describe('When getting count', () => {
   var searchQuery, countStream;
   before(() => {
-    const elasticsearchClientStub = sinon.stub({
-      index: (eventDefinition) => {},
-      search: (query) => {
-        hits: {
-          total: 10
-        }
-      }
-    });
+    const elasticsearchClientStub = {
+      search: sinon.stub().returns(new Promise((resolve) => {
+        resolve({
+          hits: {
+            total: 10
+          }
+        })
+      }))
+    };
     sinon.stub(elasticsearchClientFactory, 'create').returns(elasticsearchClientStub);
     const options = {}
     const apiStub = {
@@ -59,6 +59,7 @@ describe('When getting count', () => {
   });
 
   it('search query should return total hits', () => {
-    countStream.head().map(count => count.should.equal(10));
+    countStream.head().tap(count => count.should.equal(10)).done(r => {
+    });
   });
 });

@@ -1,7 +1,5 @@
 var elasticsearchClientFactory = require('../elasticsearch_client_factory')
-var fs = require('fs')
 var should = require('should');
-var sinon = require('sinon');
 
 describe('When creating elasticsearch client', () => {
   describe('and ca certificate is not enabled', () => {
