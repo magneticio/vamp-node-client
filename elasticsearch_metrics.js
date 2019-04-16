@@ -49,6 +49,30 @@ module.exports = function(api, options) {
     };
   };
 
+  this.searchQuery = function(term, seconds) {
+    return {
+      index: elasticSearchConfig.eventIndex,
+      body: {
+        size: 0,
+        query: {
+          bool: {
+            filter: [{
+              term: term
+            },
+              {
+                range: {
+                  "@timestamp": {
+                    gt: "now-" + seconds + "s"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    };
+  };
+
   this.normalizeEvent = function(tags, value, type, salt) {
     tags = tags || [];
     const expandedTags = new Set();
@@ -137,7 +161,7 @@ module.exports = function(api, options) {
 
       return _(
         elasticSearchClient
-          .search($this.query(term, seconds))
+          .search($this.searchQuery(term, seconds))
       );
     },
     average: function(term, on, seconds) {
