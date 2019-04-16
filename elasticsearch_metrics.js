@@ -129,6 +129,17 @@ module.exports = function(api, options) {
         return response.hits.total;
       });
     },
+    search: function(term, seconds) {
+      logger.log('ELASTICSEARCH SEARCH ' + JSON.stringify({
+        term: term,
+        seconds: seconds
+      }));
+
+      return _(
+        elasticSearchClient
+          .search($this.query(term, seconds))
+      );
+    },
     average: function(term, on, seconds) {
       logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({
         term: term,
