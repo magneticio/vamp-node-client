@@ -49,9 +49,9 @@ module.exports = function(api, options) {
     };
   };
 
-  this.searchQuery = function(term, seconds, size) {
+  this.searchQuery = function(index, term, seconds, size) {
     return {
-      index: elasticSearchConfig.eventIndex,
+      index: index,
       body: {
         size: size,
         query: {
@@ -160,9 +160,23 @@ module.exports = function(api, options) {
         size: size
       }));
 
+      let path = elasticSearchConfig.eventIndex;
+      if (!path) {
+        throw new Error('no index/type');
+      }
+
+      let index1 = path.indexOf('{');
+      let index2 = path.indexOf('}', index1);
+
+      if (index1 > -1 && index2 > -1) {
+        let part1 = path.substr(0, index1);
+        let part2 = path.substr(index1 + 1, index2 - index1 - 1).replace('dd', 'DD');
+        path = part1 + dateFormat(new Date(), part2);
+      }
+
       return _(
         elasticSearchClient
-          .search($this.searchQuery(term, seconds, size))
+          .search($this.searchQuery(path, term, seconds, size))
       );
     },
     average: function(term, on, seconds) {
