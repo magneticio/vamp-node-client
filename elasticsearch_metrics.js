@@ -49,11 +49,11 @@ module.exports = function(api, options) {
     };
   };
 
-  this.searchQuery = function(term, seconds) {
+  this.searchQuery = function(term, seconds, size) {
     return {
       index: elasticSearchConfig.eventIndex,
       body: {
-        size: 0,
+        size: size,
         query: {
           bool: {
             filter: [{
@@ -61,7 +61,7 @@ module.exports = function(api, options) {
             },
               {
                 range: {
-                  "@timestamp": {
+                  "timestamp": {
                     gt: "now-" + seconds + "s"
                   }
                 }
@@ -153,15 +153,16 @@ module.exports = function(api, options) {
         return response.hits.total;
       });
     },
-    search: function(term, seconds) {
+    search: function(term, seconds, size) {
       logger.log('ELASTICSEARCH SEARCH ' + JSON.stringify({
         term: term,
-        seconds: seconds
+        seconds: seconds,
+        size: size
       }));
 
       return _(
         elasticSearchClient
-          .search($this.searchQuery(term, seconds))
+          .search($this.searchQuery(term, seconds, size))
       );
     },
     average: function(term, on, seconds) {
