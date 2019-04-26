@@ -174,10 +174,17 @@ module.exports = function(api, options) {
         path = part1 + dateFormat(new Date(), part2);
       }
 
-      return _(
-        elasticSearchClient
-          .search($this.searchQuery(path, term, seconds, size))
-      );
+      return elasticSearchClient.indices.exists({index: path}, (err, response, status) => {
+        if (response) {
+          return _(
+            elasticSearchClient
+              .search($this.searchQuery(path, term, seconds, size))
+          );
+        } else {
+          logger.log('ELASTICSEARCH: index does not exist: ' + path);
+          return _(Promise.resolve([]))
+        }
+      });
     },
     average: function(term, on, seconds) {
       logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({
