@@ -90,8 +90,8 @@ describe('when getting stats', () => {
       response.total.should.equal(17);
       response.min.should.equal(0);
       response.max.should.equal(1939);
-      response.avg.should.equal(228.11);
-      response.stdDeviation.should.equal(571.65);
+      response.avg.should.equal(228.1);
+      response.stdDeviation.should.equal(571.7);
     }).done(r => {
     });
   });
