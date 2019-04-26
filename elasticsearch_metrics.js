@@ -174,8 +174,12 @@ module.exports = function(api, options) {
         path = part1 + dateFormat(new Date(), part2);
       }
 
+      logger.log('ELASTICSEARCH: checking if index exists: ' + path);
+
       return elasticSearchClient.indices.exists({index: path}, (err, response, status) => {
+        logger.log('ELASTICSEARCH: index exists response: ' + response);
         if (response) {
+          logger.log('ELASTICSEARCH: index exists: ' + path);
           return _(
             elasticSearchClient
               .search($this.searchQuery(path, term, seconds, size))
