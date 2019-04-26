@@ -203,7 +203,7 @@ module.exports = function(api, options) {
         return {
           total: total,
           rate: Math.round(total / seconds * 100) / 100,
-          average: Math.round(response.aggregations ? response.aggregations.agg.value * 100 : 0) / 100
+          average: Math.round(response.aggregations ? response.aggregations.agg.value * 10 : 0) / 10
         };
       });
     },
@@ -229,10 +229,10 @@ module.exports = function(api, options) {
         let returnValue = {
           total: total,
           rate: Math.round(total / seconds * 100) / 100,
-          avg: Math.round(response.aggregations.agg.avg * 100) / 100,
-          min: Math.round(response.aggregations.agg.min * 100) / 100,
-          max: Math.round(response.aggregations.agg.max * 100) / 100,
-          stdDeviation: Math.round(response.aggregations.agg.std_deviation * 100) / 100
+          avg: Math.round(response.aggregations.agg.avg * 10) / 10,
+          min: Math.round(response.aggregations.agg.min * 10) / 10,
+          max: Math.round(response.aggregations.agg.max * 10) / 10,
+          stdDeviation: Math.round(response.aggregations.agg.std_deviation * 10) / 10
         };
         return returnValue;
       });
@@ -261,7 +261,7 @@ module.exports = function(api, options) {
         let total = response.hits.total;
         let percentiles = response.aggregations.agg.values;
         Object.keys(percentiles).map(function(key, index) {
-          percentiles[key] = percentiles[key] === "NaN" ? '0.0' : (Math.round(percentiles[key] * 10) / 10).toFixed(1);
+          percentiles[key] = percentiles[key] === "NaN" ? 0 : (Math.round(percentiles[key] * 10) / 10);
         });
         let returnValue = {
           total: total,
