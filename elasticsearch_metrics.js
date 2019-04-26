@@ -176,19 +176,15 @@ module.exports = function(api, options) {
 
       logger.log('ELASTICSEARCH: checking if index exists: ' + path);
 
-      return elasticSearchClient.indices.exists({index: path}, (err, response, status) => {
-        logger.log('ELASTICSEARCH: index exists response: ' + response);
-        if (response) {
+      return _(elasticSearchClient.indices.exists({index: path}).then(indexExists => {
+        if (indexExists) {
           logger.log('ELASTICSEARCH: index exists: ' + path);
-          return _(
-            elasticSearchClient
-              .search($this.searchQuery(path, term, seconds, size))
-          );
+          return elasticSearchClient.search($this.searchQuery(path, term, seconds, size));
         } else {
           logger.log('ELASTICSEARCH: index does not exist: ' + path);
-          return _(Promise.resolve([]))
+          return Promise.resolve([]);
         }
-      });
+      }));
     },
     average: function(term, on, seconds) {
       logger.log('ELASTICSEARCH AVERAGE ' + JSON.stringify({
