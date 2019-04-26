@@ -182,7 +182,7 @@ module.exports = function(api, options) {
           return elasticSearchClient.search($this.searchQuery(path, term, seconds, size));
         } else {
           logger.log('ELASTICSEARCH: index does not exist: ' + path);
-          return [];
+          return _.nil;
         }
       }));
     },
