@@ -264,7 +264,7 @@ module.exports = function(api, options) {
           .search(query)
       ).map((response) => {
         let total = response.hits.total;
-        let percentiles = response.aggregations ? response.aggregations.agg.values : {};
+        let percentiles = response.aggregations ? response.aggregations.agg.values : prepareEmptyPercentiles(percentilesValues);
         Object.keys(percentiles).map(function(key, index) {
           percentiles[key] = percentiles[key] === "NaN" ? 0 : (Math.round(percentiles[key] * 10) / 10);
         });
@@ -277,4 +277,10 @@ module.exports = function(api, options) {
       });
     }
   }
+};
+
+function prepareEmptyPercentiles(percentilesValues) {
+  let percentiles = {};
+  percentilesValues.forEach(v => (percentiles[v] = 0));
+  return percentiles
 };
