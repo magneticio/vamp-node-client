@@ -281,9 +281,7 @@ module.exports = function(api, options) {
 };
 
 function prepareEmptyPercentiles(percentilesValues) {
-  logger.log('Prepare percentiles func with arg: ' + JSON.stringify(percentilesValues));
   let percentiles = {};
-  percentilesValues.forEach(v => (percentiles[v] = 0));
-  logger.log('Prepare percentiles func response: ' + JSON.stringify(percentiles));
+  percentilesValues.forEach(v => (percentiles[(v+'.0')] = 0));
   return percentiles;
 };
