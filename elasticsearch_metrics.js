@@ -265,6 +265,7 @@ module.exports = function(api, options) {
       ).map((response) => {
         let total = response.hits.total;
         let percentiles = response.aggregations ? response.aggregations.agg.values : prepareEmptyPercentiles(percentilesValues);
+        logger.log('Percentiles: ' + JSON.stringify(percentiles));
         Object.keys(percentiles).map(function(key, index) {
           percentiles[key] = percentiles[key] === "NaN" ? 0 : (Math.round(percentiles[key] * 10) / 10);
         });
@@ -280,7 +281,9 @@ module.exports = function(api, options) {
 };
 
 function prepareEmptyPercentiles(percentilesValues) {
+  logger.log('Prepare percentiles func with arg: ' + JSON.stringify(percentilesValues));
   let percentiles = {};
   percentilesValues.forEach(v => (percentiles[v] = 0));
-  return percentiles
+  logger.log('Prepare percentiles func response: ' + JSON.stringify(percentiles));
+  return percentiles;
 };
