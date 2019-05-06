@@ -229,6 +229,7 @@ module.exports = function(api, options) {
 
       return _(elasticSearchClient
         .search(query)).map((response) => {
+        logger.log('Elasticsearch stats response: ' + JSON.stringify(response));
         let total = response.hits.total;
         let returnValue = {
           total: total,
