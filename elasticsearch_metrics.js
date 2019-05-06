@@ -229,7 +229,6 @@ module.exports = function(api, options) {
 
       return _(elasticSearchClient
         .search(query)).map((response) => {
-        logger.log('Elasticsearch stats response: ' + JSON.stringify(response));
         let total = response.hits.total;
         let returnValue = {
           total: total,
@@ -265,7 +264,6 @@ module.exports = function(api, options) {
       ).map((response) => {
         let total = response.hits.total;
         let percentiles = response.aggregations ? response.aggregations.agg.values : prepareEmptyPercentiles(percentilesValues);
-        logger.log('Percentiles: ' + JSON.stringify(percentiles));
         Object.keys(percentiles).map(function(key, index) {
           percentiles[key] = percentiles[key] === "NaN" ? 0 : (Math.round(percentiles[key] * 10) / 10);
         });
