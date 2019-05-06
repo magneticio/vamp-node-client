@@ -233,10 +233,10 @@ module.exports = function(api, options) {
         let returnValue = {
           total: total,
           rate: Math.round(total / seconds * 100) / 100,
-          avg: Math.round(response.aggregations.agg.avg * 10) / 10,
-          min: Math.round(response.aggregations.agg.min * 10) / 10,
-          max: Math.round(response.aggregations.agg.max * 10) / 10,
-          stdDeviation: Math.round(response.aggregations.agg.std_deviation * 10) / 10
+          avg: response.aggregations ? (Math.round(response.aggregations.agg.avg * 10) / 10) : 0,
+          min: response.aggregations ? (Math.round(response.aggregations.agg.min * 10) / 10) : 0,
+          max: response.aggregations ? (Math.round(response.aggregations.agg.max * 10) / 10) : 0,
+          stdDeviation: response.aggregations ? (Math.round(response.aggregations.agg.std_deviation * 10) / 10) : 0
         };
         return returnValue;
       });
@@ -263,7 +263,7 @@ module.exports = function(api, options) {
           .search(query)
       ).map((response) => {
         let total = response.hits.total;
-        let percentiles = response.aggregations.agg.values;
+        let percentiles = response.aggregations ? response.aggregations.agg.values : prepareEmptyPercentiles(percentilesValues);
         Object.keys(percentiles).map(function(key, index) {
           percentiles[key] = percentiles[key] === "NaN" ? 0 : (Math.round(percentiles[key] * 10) / 10);
         });
@@ -276,4 +276,10 @@ module.exports = function(api, options) {
       });
     }
   }
+};
+
+function prepareEmptyPercentiles(percentilesValues) {
+  let percentiles = {};
+  percentilesValues.forEach(v => (percentiles[(v+'.0')] = 0));
+  return percentiles;
 };
