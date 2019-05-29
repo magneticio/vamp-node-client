@@ -133,6 +133,7 @@ module.exports = function(api, options) {
           index: path
         }).then(exists => {
           if(!exists) {
+            logger.log('ELASTICSEARCH CREATING INDEX ' + path);
             return elasticSearchClient.indices.create({
               index: path,
               body: {
