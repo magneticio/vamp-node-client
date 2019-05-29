@@ -128,11 +128,30 @@ module.exports = function(api, options) {
 
       const event = $this.normalizeEvent(tags, value, type, salt);
 
-      return _(elasticSearchClient.index({
-        index: path,
-        type: type,
-        body: event
-      }))
+      return _(
+        elasticSearchClient.indices.exists({
+          index: path
+        }).then(exists => {
+          if(!exists) {
+            return elasticSearchClient.indices.create({
+              index: path,
+              body: {
+                "mappings": {
+                  "_doc": {
+                    "numeric_detection": true
+                  }
+                }
+              }
+            });
+          }
+        }).then(() => {
+          return elasticSearchClient.index({
+            index: path,
+            type: type,
+            body: event
+          });
+        })
+      );
     },
     count: function(term, range, seconds) {
       logger.log('ELASTICSEARCH COUNT ' + JSON.stringify({
