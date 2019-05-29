@@ -137,9 +137,9 @@ module.exports = function(api, options) {
             return elasticSearchClient.indices.create({
               index: path,
               body: {
-                "mappings": {
-                  "_doc": {
-                    "numeric_detection": true
+                mappings: {
+                  _doc: {
+                    numeric_detection: true
                   }
                 }
               }
