@@ -43,12 +43,12 @@ describe('When getting count', () => {
   });
 
   it('search query filter term should be set', () => {
-    const queryFilterTerm = searchQuery.body.query.bool.filter[0].term;
+    const queryFilterTerm = searchQuery.body.query.bool.filter[1].term;
     queryFilterTerm.should.equal('testTerm');
   });
 
   it('search query filter time range should be set', () => {
-    const queryFilterTimeRange = searchQuery.body.query.bool.filter[1].range;
+    const queryFilterTimeRange = searchQuery.body.query.bool.filter[0].range;
     const timestampGreaterThan = queryFilterTimeRange["@timestamp"].gt;
     timestampGreaterThan.should.equal('now-100s');
   });
@@ -59,7 +59,6 @@ describe('When getting count', () => {
   });
 
   it('search query should return total hits', () => {
-    countStream.head().tap(count => count.should.equal(10)).done(r => {
-    });
+    countStream.head().tap(count => count.should.equal(10)).done(r => {});
   });
 });
