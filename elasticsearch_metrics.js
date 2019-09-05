@@ -19,13 +19,14 @@ module.exports = function(api, options) {
     clientCertKeyPassword: process.env.VAMP_PULSE_ELASTICSEARCH_CLIENT_CERT_KEY_PASSWORD || api.config()['vamp.pulse.elasticsearch.client-cert.key.password'],
     metricsType: process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_TYPE || api.config()['vamp.gateway-driver.elasticsearch.metrics.type'],
     metricsIndex: process.env.VAMP_GATEWAY_DRIVER_ELASTICSEARCH_METRICS_INDEX || api.config()['vamp.gateway-driver.elasticsearch.metrics.index'],
-    eventIndex: options.vamp_elasticsearch_event_index || process.env.VAMP_ELASTICSEARCH_EVENT_INDEX
+    eventIndex: options.vamp_elasticsearch_event_index || process.env.VAMP_ELASTICSEARCH_EVENT_INDEX,
+    eventV2Index: options.vamp_elasticsearch_event_v2_index || process.env.VAMP_ELASTICSEARCH_EVENT_V2_INDEX
   }
 
   const elasticSearchClient = elasticSearchClientFactory.create(elasticSearchConfig);
 
-  this.query = function(term, seconds) {
-    return {
+  this.query = function(filters, seconds) {
+    let q = {
       index: elasticSearchConfig.metricsIndex,
       type: elasticSearchConfig.metricsType,
       body: {
@@ -33,20 +34,21 @@ module.exports = function(api, options) {
         query: {
           bool: {
             filter: [{
-              term: term
-            },
-              {
-                range: {
-                  "@timestamp": {
-                    gt: "now-" + seconds + "s"
-                  }
+              range: {
+                "@timestamp": {
+                  gt: "now-" + seconds + "s"
                 }
               }
-            ]
+            }]
           }
         }
       }
     };
+
+    filters.forEach(f => {
+      q.body.query.bool.filter.push(f)
+    });
+    return q;
   };
 
   this.searchQuery = function(index, term, seconds, size) {
@@ -57,8 +59,8 @@ module.exports = function(api, options) {
         query: {
           bool: {
             filter: [{
-              term: term
-            },
+                term: term
+              },
               {
                 range: {
                   "timestamp": {
@@ -73,7 +75,7 @@ module.exports = function(api, options) {
     };
   };
 
-  this.normalizeEvent = function(tags, value, type, salt) {
+  this.normalizeEvent = function(tags, value, type, salt, stringifyValue) {
     tags = tags || [];
     const expandedTags = new Set();
     tags.forEach(function(tag) {
@@ -85,7 +87,7 @@ module.exports = function(api, options) {
     });
     let body = {
       tags: Array.from(expandedTags),
-      value: JSON.stringify(value),
+      value: stringifyValue ? JSON.stringify(value) : value,
       type: type,
       timestamp: new Date().toISOString()
     };
@@ -122,11 +124,45 @@ module.exports = function(api, options) {
         path = part1 + dateFormat(new Date(), part2);
       }
 
-      if(!type) {
-         type = path.substr(index2 + 1);
+      if (!type) {
+        type = path.substr(index2 + 1);
       }
 
-      const event = $this.normalizeEvent(tags, value, type, salt);
+      const event = $this.normalizeEvent(tags, value, type, salt, true);
+
+      return _(elasticSearchClient.index({
+        index: path,
+        type: type,
+        body: event
+      }))
+    },
+    eventV2: function(tags, value, type, salt) {
+      logger.log('ELASTICSEARCH EVENT V2' + JSON.stringify({
+        tags: tags,
+        value: value,
+        type: type,
+        salt: salt
+      }));
+
+      let path = elasticSearchConfig.eventV2Index;
+      if (!path) {
+        throw new Error('no index/type');
+      }
+
+      let index1 = path.indexOf('{');
+      let index2 = path.indexOf('}', index1);
+
+      if (index1 > -1 && index2 > -1) {
+        let part1 = path.substr(0, index1);
+        let part2 = path.substr(index1 + 1, index2 - index1 - 1).replace('dd', 'DD');
+        path = part1 + dateFormat(new Date(), part2);
+      }
+
+      if (!type) {
+        type = path.substr(index2 + 1);
+      }
+
+      const event = $this.normalizeEvent(tags, value, type, salt, false);
 
       return _(elasticSearchClient.index({
         index: path,
@@ -141,14 +177,16 @@ module.exports = function(api, options) {
         seconds: seconds
       }));
 
-      let query = $this.query(term, seconds);
+      let query = $this.query([{
+        term: term
+      }], seconds);
       query.body.query.bool.filter.push({
         range: range
       });
 
       return _(
         elasticSearchClient
-          .search(query)
+        .search(query)
       ).map((response) => {
         return response.hits.total;
       });
@@ -174,7 +212,9 @@ module.exports = function(api, options) {
         path = part1 + dateFormat(new Date(), part2);
       }
 
-      return _(elasticSearchClient.indices.exists({index: path}).then(indexExists => {
+      return _(elasticSearchClient.indices.exists({
+        index: path
+      }).then(indexExists => {
         if (indexExists) {
           return elasticSearchClient.search($this.searchQuery(path, term, seconds, size));
         } else {
@@ -190,7 +230,9 @@ module.exports = function(api, options) {
         seconds: seconds
       }));
 
-      let query = $this.query(term, seconds);
+      let query = $this.query([{
+        term: term
+      }], seconds);
       query.body.aggregations = {
         agg: {
           avg: {
@@ -201,7 +243,7 @@ module.exports = function(api, options) {
 
       return _(
         elasticSearchClient
-          .search(query)
+        .search(query)
       ).map((response) => {
         let total = response.hits.total;
         return {
@@ -211,14 +253,14 @@ module.exports = function(api, options) {
         };
       });
     },
-    stats: function(term, on, seconds) {
+    stats: function(filters, on, seconds) {
       logger.log('ELASTICSEARCH STATS ' + JSON.stringify({
-        term: term,
+        filters: filters,
         on: on,
         seconds: seconds
       }));
 
-      let query = $this.query(term, seconds);
+      let query = $this.query(filters, seconds);
       query.body.aggregations = {
         agg: {
           extended_stats: {
@@ -241,14 +283,14 @@ module.exports = function(api, options) {
         return returnValue;
       });
     },
-    percentile: function(term, on, seconds, percentilesValues) {
+    percentile: function(filters, on, seconds, percentilesValues) {
       logger.log('ELASTICSEARCH PERCENTILE ' + JSON.stringify({
-        term: term,
+        filters: filters,
         on: on,
         seconds: seconds
       }));
 
-      let query = $this.query(term, seconds);
+      let query = $this.query(filters, seconds);
       query.body.aggregations = {
         agg: {
           percentiles: {
@@ -260,7 +302,7 @@ module.exports = function(api, options) {
 
       return _(
         elasticSearchClient
-          .search(query)
+        .search(query)
       ).map((response) => {
         let total = response.hits.total;
         let percentiles = response.aggregations ? response.aggregations.agg.values : prepareEmptyPercentiles(percentilesValues);
@@ -280,6 +322,6 @@ module.exports = function(api, options) {
 
 function prepareEmptyPercentiles(percentilesValues) {
   let percentiles = {};
-  percentilesValues.forEach(v => (percentiles[(v+'.0')] = 0));
+  percentilesValues.forEach(v => (percentiles[(v + '.0')] = 0));
   return percentiles;
 };

@@ -7,17 +7,16 @@ describe('when getting average', () => {
   before(() => {
     const clientStub = {
       search: sinon.stub().returns(new Promise((resolve) => {
-        resolve(
-          {
-            hits: {
-              total: 10
-            },
-            aggregations: {
-              agg: {
-                value: 50
-              }
+        resolve({
+          hits: {
+            total: 10
+          },
+          aggregations: {
+            agg: {
+              value: 50
             }
-          });
+          }
+        });
       }))
     };
     sinon.stub(elasticsearchClientFactory, 'create').returns(clientStub);
@@ -50,12 +49,12 @@ describe('when getting average', () => {
   });
 
   it('search query filter term should be set', () => {
-    const queryFilterTerm = searchQuery.body.query.bool.filter[0].term;
+    const queryFilterTerm = searchQuery.body.query.bool.filter[1].term;
     queryFilterTerm.should.equal('testTerm');
   });
 
   it('search query filter time range should be set', () => {
-    const queryFilterTimeRange = searchQuery.body.query.bool.filter[1].range;
+    const queryFilterTimeRange = searchQuery.body.query.bool.filter[0].range;
     const timestampGreaterThan = queryFilterTimeRange["@timestamp"].gt;
     timestampGreaterThan.should.equal('now-100s');
   });
@@ -70,7 +69,6 @@ describe('when getting average', () => {
       response.total.should.equal(10);
       response.rate.should.equal(0.1);
       response.average.should.equal(50);
-    }).done(r => {
-    });
+    }).done(r => {});
   });
 });

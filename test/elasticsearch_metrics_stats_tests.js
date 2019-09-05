@@ -10,32 +10,28 @@ describe('when getting stats', () => {
         resolve({
           took: 0,
           timed_out: false,
-          _shards:
-            {
-              total: 5,
-              successful: 5,
-              skipped: 0,
-              failed: 0,
-            },
-          hits:
-            {
-              total: 17,
-              max_score: 0,
-            },
-          aggregations:
-            {
-              agg:
-                {
-                  count: 17,
-                  min: 0,
-                  max: 1939,
-                  avg: 228.11444,
-                  sum: 3878,
-                  sum_of_squares: 64,
-                  variance: 326791.63,
-                  std_deviation: 571.6543332
-                }
+          _shards: {
+            total: 5,
+            successful: 5,
+            skipped: 0,
+            failed: 0,
+          },
+          hits: {
+            total: 17,
+            max_score: 0,
+          },
+          aggregations: {
+            agg: {
+              count: 17,
+              min: 0,
+              max: 1939,
+              avg: 228.11444,
+              sum: 3878,
+              sum_of_squares: 64,
+              variance: 326791.63,
+              std_deviation: 571.6543332
             }
+          }
         })
       }))
     };
@@ -52,7 +48,9 @@ describe('when getting stats', () => {
       }
     };
     const elasticsearchMetrics = new metrics(apiStub, options);
-    responseStream = elasticsearchMetrics.stats('testTerm', 'testAggregationField', 100);
+    responseStream = elasticsearchMetrics.stats([{
+      term: 'testTerm'
+    }], 'testAggregationField', 100);
     const searchCall = clientStub.search.lastCall;
     searchQuery = searchCall.args[0];
   });
@@ -70,12 +68,12 @@ describe('when getting stats', () => {
   });
 
   it('search query filter term should be set', () => {
-    const queryFilterTerm = searchQuery.body.query.bool.filter[0].term;
+    const queryFilterTerm = searchQuery.body.query.bool.filter[1].term;
     queryFilterTerm.should.equal('testTerm');
   });
 
   it('search query filter time range should be set', () => {
-    const queryFilterTimeRange = searchQuery.body.query.bool.filter[1].range;
+    const queryFilterTimeRange = searchQuery.body.query.bool.filter[0].range;
     const timestampGreaterThan = queryFilterTimeRange["@timestamp"].gt;
     timestampGreaterThan.should.equal('now-100s');
   });
@@ -92,7 +90,6 @@ describe('when getting stats', () => {
       response.max.should.equal(1939);
       response.avg.should.equal(228.1);
       response.stdDeviation.should.equal(571.7);
-    }).done(r => {
-    });
+    }).done(r => {});
   });
 });

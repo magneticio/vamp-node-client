@@ -10,36 +10,31 @@ describe('when getting percentile', () => {
         resolve({
           took: 1,
           timed_out: false,
-          _shards:
-            {
-              total: 5,
-              successful: 5,
-              skipped: 0,
-              failed: 0,
-            },
-          hits:
-            {
-              total: 18,
-              max_score: 0,
-            },
-          aggregations:
-            {
-              agg:
-                {
-                  values:
-                    {
-                      '50.0': 0.5,
-                      '66.0': 2,
-                      '75.0': 0,
-                      '80.0': 2.60,
-                      '90.0': 707.60,
-                      '95.0': 1655.091111,
-                      '98.0': 1825.44333,
-                      '99.0': 1882.21,
-                      '100.0': 1939
-                    }
-                }
+          _shards: {
+            total: 5,
+            successful: 5,
+            skipped: 0,
+            failed: 0,
+          },
+          hits: {
+            total: 18,
+            max_score: 0,
+          },
+          aggregations: {
+            agg: {
+              values: {
+                '50.0': 0.5,
+                '66.0': 2,
+                '75.0': 0,
+                '80.0': 2.60,
+                '90.0': 707.60,
+                '95.0': 1655.091111,
+                '98.0': 1825.44333,
+                '99.0': 1882.21,
+                '100.0': 1939
+              }
             }
+          }
         })
       }))
     };
@@ -55,7 +50,9 @@ describe('when getting percentile', () => {
       }
     };
     const elasticsearchMetrics = new metrics(apiStub, options);
-    responseStream = elasticsearchMetrics.percentile('testTerm', 'testAggregationField', 100, [50, 66, 75, 80, 90, 95, 98, 99, 100]);
+    responseStream = elasticsearchMetrics.percentile([{
+      term: 'testTerm'
+    }], 'testAggregationField', 100, [50, 66, 75, 80, 90, 95, 98, 99, 100]);
     const searchCall = clientStub.search.lastCall;
     searchQuery = searchCall.args[0];
   });
@@ -73,12 +70,12 @@ describe('when getting percentile', () => {
   });
 
   it('search query filter term should be set', () => {
-    const queryFilterTerm = searchQuery.body.query.bool.filter[0].term;
+    const queryFilterTerm = searchQuery.body.query.bool.filter[1].term;
     queryFilterTerm.should.equal('testTerm');
   });
 
   it('search query filter time range should be set', () => {
-    const queryFilterTimeRange = searchQuery.body.query.bool.filter[1].range;
+    const queryFilterTimeRange = searchQuery.body.query.bool.filter[0].range;
     const timestampGreaterThan = queryFilterTimeRange["@timestamp"].gt;
     timestampGreaterThan.should.equal('now-100s');
   });
@@ -112,7 +109,6 @@ describe('when getting percentile', () => {
         response.percentile['98.0'].should.equal(1825.4);
         response.percentile['99.0'].should.equal(1882.2);
         response.percentile['100.0'].should.equal(1939);
-      }).done(r => {
-    });
+      }).done(r => {});
   });
 });
